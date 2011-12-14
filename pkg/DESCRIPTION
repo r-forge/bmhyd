@@ -1,0 +1,11 @@
+Package: BMhyd
+Version: 1.0
+Date: 2011-12-31
+Type: Package
+Title: PCM for Hybridization
+Date: 2011-11-07
+Author: Dwueng-Chwuan Jhwueng <djhwueng@nimbios.org>
+Maintainer: Dwueng-Chwuan Jhwueng <djhwueng@nimbios.org>
+Depends: corpcor, numDeriv,optimx
+Description: Detect the hybrid vigor, heritability factor, and hybrid variation from a given comparative data and a rooted phylogenetic network.  
+License: GPL (>=2)
