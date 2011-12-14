@@ -7,5 +7,5 @@ Date: 2011-11-07
 Author: Dwueng-Chwuan Jhwueng <djhwueng@nimbios.org>
 Maintainer: Dwueng-Chwuan Jhwueng <djhwueng@nimbios.org>
 Depends: corpcor, numDeriv,optimx
-Description: Detect the hybrid vigor, heritability factor, and hybrid variation from a given comparative data and a rooted phylogenetic network.  
+Description: Detect hybrid vigor, heritability factor, and hybrid variation from a given comparative data and a rooted phylogenetic network.  
 License: GPL (>=2)
