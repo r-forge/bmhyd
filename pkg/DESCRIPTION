@@ -7,5 +7,5 @@ Date: 2011-11-07
 Author: Dwueng-Chwuan Jhwueng <djhwueng@nimbios.org>
 Maintainer: Dwueng-Chwuan Jhwueng <djhwueng@nimbios.org>
 Depends: corpcor, numDeriv,optimx
-Description: Detect hybrid vigor, heritability factor, and hybrid variation from a given comparative data and a rooted phylogenetic network.  
+Description: The BMhyd package analyze the phenotypic evolution of species of hybrid origin on a phylogenetic network. This package can detect the hybrid vigor effect, beta; a burst of variation associated with the hybridization event, V[H]; and the relative portion of heritability h from its parents. Parameters are estimated by maximum likelihood technique. Users need to enter comparative data in vector format and a phylogenetic network in eNewick format. The full model contains five parameters: the overeal mean mu, the overall variance sigma^2, the hibrid vigor beta, the hybrid variation v_H and the proportion of heritability h(set up to 0.5) where three submodels fix the value of beta=1 or v_H=0 or both. Those Models are also compared under Akaike Information Criterion and the model averages estimates are reported.   
 License: GPL (>=2)
