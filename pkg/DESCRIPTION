@@ -1,10 +1,11 @@
 Package: BMhyd
 Version: 1.0
-Date: 2012-10-5
+Date: 2013-8-1
 Type: Package
 Title: PCM for Hybridization
-Author: Dwueng-Chwuan Jhwueng <djhwueng@nimbios.org>
-Maintainer: Dwueng-Chwuan Jhwueng <djhwueng@nimbios.org>
-Depends: corpcor, numDeriv,optimx
-Description: The BMhyd package analyze the phenotypic evolution of species of hybrid origin on a phylogenetic network. This package can detect the hybrid vigor effect, beta; a burst of variation associated with the hybridization event, V[H]; and the relative portion of heritability h from its parents. Parameters are estimated by maximum likelihood technique. Users need to enter comparative data in vector format and a phylogenetic network in eNewick format. The full model contains five parameters: the overeal mean mu, the overall variance sigma^2, the hibrid vigor beta, the hybrid variation v_H and the proportion of heritability h(set up to 0.5) where three submodels fix the value of beta=1 or v_H=0 or both. Those Models are also compared under Akaike Information Criterion and the model averages estimates are reported.   
+Author: Dwueng-Chwuan Jhwueng <djhwueng@umail.iu.edu>
+Maintainer: Dwueng-Chwuan Jhwueng <djhwueng@umail.iu.edu>
+Imports: corpcor, numDeriv,optimx
+Description: The BMhyd package analyzes the phenotypic evolution of species of hybrid origin on a phylogenetic network. This package can detect the hybrid vigor effect, a burst of variation at formation, and the relative portion of heritability from its parents. Parameters are estimated by maximum likelihood technique. Users need to enter comparative data set and phylogenetic networks in eNewick format. The full model contains five parameters: the overall mean, the overall variance, the hybrid vigor, the hybrid variation and the proportion of heritability. We report four different models. All fix the heritability to equal contributions from each parent. Model 1 fixes the hybrid vigor and burst of variation at formation at 1 and 0; respectively. Model 2 fixes the hybrid vigor at 1 but allow the burst of variation at formation to vary; model 3 allows hybrid vigor to vary but fixes burst of variation at origin; and model 4 allows both to vary. Those models are compared under sample size correction Akaike Information Criterion (AICc). The model averaged parameter estimates are reported.   
 License: GPL (>=2)
+
