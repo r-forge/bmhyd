@@ -1,2 +1,2 @@
 export(BMhyd)
-import(corpcor,optimx,numDeriv)
+import(corpcor,numDeriv)

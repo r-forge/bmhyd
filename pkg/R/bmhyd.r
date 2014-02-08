@@ -1,7 +1,3 @@
-library(corpcor)
-library(optimx)
-library(numDeriv)
-
 newick2phylog<-function (x.tre, call = match.call()) 
 {
   complete <- function(x.tre) {
@@ -997,7 +993,7 @@ BMhyd<-function(data, network){
     if(model.Index==2){k<-3;sigma.H_sq<-0}
     if(model.Index==3){k<-2;bt<-1;sigma.H_sq<-0}
     if(model.Index==4){k<-4}
-    MLE.ALL<-optimx(p0,NegLogLike,method="Nelder-Mead", Y=Y,n=n,branchlength=branchlength,ancdes.array=ancdes.array,nleaves=nleaves,tipnames=tipnames,model.Index=model.Index )
+    MLE.ALL<-optim(p0,NegLogLike,method="Nelder-Mead", Y=Y,n=n,branchlength=branchlength,ancdes.array=ancdes.array,nleaves=nleaves,tipnames=tipnames,model.Index=model.Index )
     print(MLE.ALL)
     convergence.record[model.Index]<- MLE.ALL$convergence
     if(MLE.ALL$convergence==0){cat("The MLE estimations converge","\n\n")}
