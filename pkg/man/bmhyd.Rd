@@ -50,7 +50,7 @@ Dwueng-Chwuan Jhwueng <djhwueng@umail.iu.edu>
 }
 
 \references{
-Jhwueng D.C. and O'Meara B.C. 2013. \emph{Studying trait evolution in hybrid species on phylogenetic networks}. submitted. 
+Jhwueng D.C. and O'Meara B.C. 2014. \emph{Studying trait evolution in hybrid species on phylogenetic networks}. Submitted. 
 
 Cardona, G., F. Rossello, and G. Valiente. 2008. \emph{Extended Newick: it is time for a standard representation of phylogenetic networks}. BMC Bioinformatics 9:532.
 

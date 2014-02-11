@@ -985,7 +985,7 @@ BMhyd<-function(data, network){
   Hessian.mtx<-array(0,c(4,5,5))
   para.cov.matrix<-array(0,c(4,5,5))
   p0 = c(mean(Y),1,1/2,var(Y),var(Y))#starting point
-  cat("Begin optimx optimization routine -- 
+  cat("Begin optimization routine -- 
     Starting value: (mu,beta,h,sigma^2,v.H)=(",round(p0,digits=2),")","\n\n")
     convergence.record<-array(0,dim(output.array)[1])
   for (model.Index in 1:dim(output.array)[1]){
@@ -1085,7 +1085,7 @@ BMhyd<-function(data, network){
   obj$wgt.param.est.se<-round(output.array[5:6,c(1:2,4:5)],2)
   names(convergence.record)<- c("bt=1","v.H=0","bt=1;v.H=0","free")
   obj$convergence<- convergence.record
-  print("0: estimation is convergent")
+  print("0: search converged (succeeded at getting at least a local optimum)")
   #library(ade4)
   #plot.phylog(newick2phylog(x.tre, FALSE))
   #return(output.array)
