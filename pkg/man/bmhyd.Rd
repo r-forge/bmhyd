@@ -62,18 +62,11 @@ Gilbert, P.  2011. numDeriv: Accurate Numerical Derivatives. R package version
 Nash, J.C. and R. Varadhan (2011). Unifying Optimization Algorithms to Aid Software System Users: optimx for R. Journal of Statistical Software, 43(9), 1-14. URL http://www.jstatsoft.org/v43/i09/.
 }
 \examples{
-## A 9 taxa phylogenetic network in eNewick format. 7 normal species and 2 hybrid.
-network<-c("(((1:0.35,2:0.35)10:0.5,(3:0.7,(4:0.45,(5:0.1,(6:0.1)13:0)12:0.35)11:0.25)16:0.15)18:0.15,((13:0,7:0.1)14:0.55,(8:0.2,9:0.2)15:0.45)17:0.35)19:0;")
+## A 5 taxon phylogenetic network in eNewick format. It has four normal species and
+#  one hybrid (species 2).
+network<-c("(((1:0.5,(2:0.5)7:0)6:0.1,(7:0,3:0.5)8:0.1)10:0.4,(4:0.3,5:0.3)9:0.7)11:0;")
 ## Comparative data
-data<-matrix(c( 16.00,12.00,16.00,23.00,18.00,18.00,25.00,20.00,14.00  ),ncol=1)
+data<-matrix(c( 1.2, 3.5, 1.6, 2.7, 4.3  ),ncol=1)
 BMhyd(data,network)
-
-
-## A 22 taxa phylogenetic network in eNewick format. Nodes a,b,c represent the extinct taxa. Not run due to speed issues
-#data(cichlid)
-#network<-c("((((((1:0.495,((((2:0.215,(5:0.215)27:0)26:0.1,(14:0.315)34:0)33:0.055,(a:0.1,(3:0.1)21:0)20:0.27)37:0.06,((21:0,4:0.1)22:0.26,(27:0,(b:0.17,(6:0.17)24:0)23:0.045)28:0.145)36:0.07)38:0.065)39:0.11,7:0.605)41:0.045,((8:0.575,9:0.575)40:0.06,10:0.635)42:0.015)43:0.125,((((24:0,11:0.17)25:0.075,12:0.245)29:0.475,(13:0.68,(34:0,(15:0.275,(16:0.275)31:0)30:0.04)35:0.365)44:0.04)45:0.02,(31:0,c:0.275)32:0.465)46:0.035)47:0.11,(17:0.835,18:0.835)48:0.05)49:0.115,19:1)50:0;")
-## Comparative data. NA represent the data for extinct species.
-#data<-matrix(c( 13.5,12.4,NA,7.0,5.8,5.5,NA,16.0,15.0,25.0,6.1,6.5,5.5,11.0,7.8,15.0,4.3,4.0,NA,8.6,10.3,8.5),ncol=1)
-#BMhyd(data,network)
 
 }
