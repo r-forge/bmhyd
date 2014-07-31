@@ -968,7 +968,246 @@ se.ave.weight.para<-
 ###################### MAIN PROGRAM ################################
 ####################################################################
 
-BMhyd<-function(data, network){
+#data is vector with names() matching taxon names
+#phy is an ape phylo object
+#flow is a data.frame with four columns
+#donor = the taxon that is the gene flow source
+#recipient = the taxon that is the gene flow recipient
+#m = the fraction of the recipient trait that comes from the source. In the case of an equal hybridization between the recipient's sister on the tree and the donor, this is 0.5. In other cases where only, say, 10% of the recipient's quantitative trait
+#	loci come from the donor, it would be 0.1
+#time.from.root = the time, counting forward FROM THE ROOT, when the gene flow happened. It's treated as a one time event, which makes sense in the case of a single allopolyploid speciation event, probably less so in the case
+#	of ongoing gene flow. Too bad. 
+#If the gene flow happened to or from a lineage with multiple descendant species, use one row for each pair. For example, if lineage (A,B) had 20% of their genes coming in from lineage (C,D,E) at 14.5 MY since the root (not back in time), you would have
+#	a flow data.frame of
+#donor	recipient	m	time.from.root
+#C		A			0.2	14.5
+#D		A			0.2	14.5
+#E		A			0.2	14.5
+#C		B			0.2	14.5
+#D		B			0.2	14.5
+#E		B			0.2	14.5
+#We may write a utility function for dealing with this case in the future.
+#Note the use of all updates of V.modified based on V.original; we don't want to add v_h to A three different times, for example, for one migration event (so we replace the variance three times based on transformations of the original variance)
+#Note that we do not assume an ultrametric tree
+BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), verbose=TRUE) {
+	if(min(flow$m)<0) {
+		stop("Min value of flow is too low; should be between zero and one")	
+	}
+	if(max(flow$m)>1) {
+		stop("Min value of flow is too high; should be between zero and one")	
+	}
+	results<-list()
+	hessians <- list()
+	results.summary <-data.frame()
+	phy.geiger.friendly <- phy #geiger can't handle branch lengths near zero. Let's lengthen them if needed
+	if(min(phy.geiger.friendly$edge.length)<0.00001) {
+		phy.geiger.friendly$edge.length <- phy.geiger.friendly$edge.length + 0.00001
+	}
+	phy <- AdjustForDet(phy)
+	starting.from.geiger<-fitContinuous(phy.geiger.friendly, data, model="BM")$opt
+	starting.values <- c(starting.from.geiger$sigsq, starting.from.geiger$z0, 1,  0) #sigma.sq, mu, beta, vh
+	for (model.index in sequence(length(models))) {
+		if(verbose) {
+			print(paste("Starting model", model.index, "of", length(models)))
+		}
+		free.parameters<-rep(TRUE, 4)
+		names(free.parameters) <- c("sigma.sq", "mu", "bt", "vh")
+		model <- models[model.index]
+		if(model==1) {
+			free.parameters[which(names(free.parameters)=="bt")]<-FALSE
+		}
+		if(model==2) {
+			free.parameters[which(names(free.parameters)=="vh")]<-FALSE
+		}
+		if(model==3) {
+			free.parameters[which(names(free.parameters)=="bt")]<-FALSE
+			free.parameters[which(names(free.parameters)=="vh")]<-FALSE
+		}
+		previous.run <- optim(par=starting.values[free.parameters], fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])
+		if(verbose) {
+			results.vector<-c(previous.run$value, previous.run$par)
+			names(results.vector) <- c("negloglik", names(free.parameters[which(free.parameters)]))
+			print(results.vector)
+		}
+		do.more = TRUE
+		#this is to continue optimizing; we find that optim is too lenient about when it accepts convergence
+		while(do.more) {
+			new.run <- optim(par=previous.run$par, fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])
+			if(previous.run$value - new.run$value < 0.000001) {
+				do.more=FALSE
+			}
+			previous.run <- new.run
+			if(verbose) {
+				results.vector<-c(previous.run$value, previous.run$par)
+				names(results.vector) <- c("negloglik", names(free.parameters[which(free.parameters)]))
+				print(results.vector)
+			}
+		}
+		results[[model.index]] <- new.run
+		try(hessians[[model.index]] <- hessian(func=CalculateLikelihood, x=new.run$par, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)]))
+		results.vector.full <- c(NA, NA, 1, 0)
+		names(results.vector.full) <- names(free.parameters)
+		names(new.run$par) <- names(free.parameters[which(free.parameters)])
+		for (i in sequence(length(new.run$par))) {
+			results.vector.full[which(names(results.vector.full)==names(new.run$par)[i])] <- new.run$par[i]
+		}
+		local.df <- data.frame(matrix(c(model.index, results.vector.full, AICc(Ntip(phy),k=length(free.parameters[which(free.parameters)]),new.run$value),new.run$value, length(free.parameters[which(free.parameters)])), nrow=1))
+		print(local.df)
+		print(c("Model", names(results.vector.full), "AICc", "NegLogL", "K"))
+		colnames(local.df) <- c("Model", names(results.vector.full), "AICc", "NegLogL", "K")
+		results.summary <- rbind(results.summary, local.df)
+		print(hessians[[model.index]])
+		try(print(solve(hessians[[model.index]])))
+	}
+	results.summary <- cbind(results.summary, deltaAICc=results.summary$AICc-min(results.summary$AICc))
+	results.summary<-cbind(results.summary, AkaikeWeight = AkaikeWeight(results.summary$deltaAICc))
+	return(results.summary)
+}
+
+DetPass <- function(phy) {
+	det.pass <- TRUE
+	vcv.result <- vcv.phylo(phy)
+	det.tries <- c(det(vcv.result), det(1000*vcv.result), det(0.0001*vcv.result))
+	if(min(det.tries)<=0) {
+		det.pass <- FALSE
+	}
+	if(sum(is.finite(det.tries))!=length(det.tries)) {
+		det.pass <- FALSE
+	}
+	return(det.pass)
+}
+
+AdjustForDet <- function(phy, max.attempts=100) {
+	attempts<-0
+	if(!DetPass(phy)) {
+		warning("Determininant of the phylogeny was difficulty to calculate, so the phylogeny needed to be adjusted. Your results may be approximate as a result")
+		while(!DetPass(phy) && attempts<=max.attempts) {
+			attempts <- attempts+1
+			phy$edge.length <- phy$edge.length+0.00001*attempts
+		}
+	}
+	if(attempts>max.attempts) {
+		stop("Phylogeny could not be adjusted adequately")
+	}
+	return(phy)
+}
+
+CalculateLikelihood <- function(x, data, phy, flow, actual.params) {
+	badval<-(0.5)*.Machine$double.xmax
+	bt <- 1
+	vh <- 0
+	sigma.sq <- x[1]
+	mu <- x[2]
+	bt.location <- which(names(actual.params)=="bt")
+	if(length(bt.location)==1) {
+		bt<-x[bt.location]	
+	}
+	vh.location <- which(names(actual.params)=="vh")
+	if(length(vh.location)==1) {
+		vh<-x[vh.location]	
+	}
+	if(sigma.sq <0 || vh<0 || bt <= 0.0000001) {
+    	return(badval)
+	}
+	times.original <-vcv.phylo(phy, model="Brownian") #is the initial one based on the tree alone, so just time
+	V.original <- sigma.sq * times.original 
+	V.modified <<- V.original
+	means.original <- rep(mu, Ntip(phy))
+	names(means.original) <- rownames(V.original)
+	means.modified <<- means.original
+	data <- data[match(names(means.original), names(data))]
+	if(length(data)!=length(means.original)) {
+		stop("Mismatch between names of taxa in data vector and on phy")	
+	}
+	for (flow.index in sequence(dim(flow)[1])) {
+		recipient.index <- which(rownames(V.modified)==flow$recipient[flow.index])
+		if(length(recipient.index)!=1) {
+			stop(paste("Tried to find ", flow$recipient[flow.index], " but instead found ", paste(rownames(V.modified)[recipient.index], sep=" ", collapse= " "), "; make sure the taxon names in the flow dataframe recipient match that of your tree", sep=""))
+		}
+		donor.index <- which(rownames(V.modified)==flow$donor[flow.index])
+		if(length(donor.index)!=1) {
+			stop(paste("Tried to find ", flow$donor[flow.index], " but instead found ", paste(rownames(V.modified)[donor], sep=" ", collapse= " "), "; make sure the taxon names in the flow dataframe donor match that of your tree", sep=""))
+		}
+		V.modified[recipient.index, donor.index] <- (1-flow$m[flow.index]) * V.original[recipient.index, donor.index] + (flow$m[flow.index]) * (flow$time.from.root[flow.index]) * sigma.sq #covariance is the weighted sum of the covariance from evolution along the tree plus evolution along the migration path
+		V.modified[donor.index, recipient.index] <- V.modified[recipient.index, donor.index]
+		#covariance managed, now to manage the variance
+		V.modified[recipient.index, recipient.index] <- V.original[recipient.index, recipient.index] + vh
+		means.modified[recipient.index] <- means.original[recipient.index] + log(bt)
+	}
+	NegLogML <- Ntip(phy)/2*log(2*pi)+1/2*t(data-means.modified)%*%pseudoinverse(V.modified)%*%(data-means.modified) + 1/2*log(abs(det(V.modified))) 
+	if(min(V.modified)<0 || sigma.sq <0 || vh<0 || bt <= 0.0000001 || !is.finite(NegLogML)) {
+    	NegLogML<-badval 
+	}
+	return(NegLogML[1])
+}
+
+AdaptiveConfidenceIntervalSampling <- function(par, fn, lower=-Inf, upper=Inf, sd.vector = NULL, desired.delta = 2, n.points=1000, ...) {
+	if(is.null(sd.vector)) {
+		sd.vector <- par/10
+	}
+	starting<-fn(par, ...)
+	if(length(lower) < length(par)) {
+		lower<-rep(lower, length(par))
+	}
+	if(length(upper) < length(par)) {
+		upper<-rep(upper, length(par))
+	}
+	if(length(sd.vector) < length(par)) {
+		sd.vector<-rep(sd.vector, length(par))
+	}
+	
+	results<-data.frame(data.frame(matrix(nrow=n.points+1, ncol=1+length(par))))
+	results[1,]<-unname(c(starting, par))
+	for (i in sequence(n.points)) {
+		sim.points<-NA
+		while(is.na(sim.points[1])) {
+			sd.vector<-sd.vector*.95
+			sim.points<-GenerateValues(par, lower, upper, sd.vector)
+		}
+		results[i+1,] <- c(fn(sim.points, ...), sim.points)
+		if(results[i+1,1]-starting>desired.delta) {
+			sd.vector<-sd.vector*runif(length(sd.vector),min=0.95, max=1)
+		} else {
+			sd.vector<-sd.vector*runif(length(sd.vector),min=1.1, max=1.2)
+		}
+		if (i%%20==0) {
+			for (j in sequence(length(par))) {
+				returned.range <- range(results[which(results[,1]-min(results[,1])<desired.delta), j+1], na.rm=TRUE)
+				total.range <- range(results[,j+1], na.rm=TRUE)
+				if(diff(returned.range)/diff(total.range) > 0.5) { #we are not sampling widely enough
+					sd.vector[j]<-sd.vector[j]*1.5
+				}
+			}
+		}
+	}
+	return(results)
+}
+
+GenerateValues <- function(par, lower, upper, sd.vector, max.tries=100) {
+	pass=FALSE
+	tries=0
+	while(!pass && tries<=max.tries) {
+		tries <- tries+1
+		pass=TRUE
+		new.vals <- rnorm(length(par), mean=par, sd=sd.vector)
+		for(i in sequence(length(par))) {
+			if(new.vals[i]<lower[i]) {
+				pass=FALSE
+			}
+			if(new.vals[i]>upper[i]) {
+				pass=FALSE
+			}
+		}
+	}
+	if(tries>max.tries) {
+		return(NA)
+	}
+	return(new.vals)
+}
+
+
+
+BMhyd.old<-function(data, network){
   Y<-data
   x.tre<-network
   res<-newick2phylog(x.tre)
