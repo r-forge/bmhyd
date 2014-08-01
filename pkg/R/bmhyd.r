@@ -989,7 +989,7 @@ se.ave.weight.para<-
 #We may write a utility function for dealing with this case in the future.
 #Note the use of all updates of V.modified based on V.original; we don't want to add v_h to A three different times, for example, for one migration event (so we replace the variance three times based on transformations of the original variance)
 #Note that we do not assume an ultrametric tree
-BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), verbose=TRUE) {
+BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), verbose=TRUE, get.se=TRUE, plot.se=TRUE) {
 	if(min(flow$m)<0) {
 		stop("Min value of flow is too low; should be between zero and one")	
 	}
@@ -997,21 +997,21 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 		stop("Min value of flow is too high; should be between zero and one")	
 	}
 	results<-list()
-	hessians <- list()
+	#hessians <- list()
 	results.summary <-data.frame()
 	phy.geiger.friendly <- phy #geiger can't handle branch lengths near zero. Let's lengthen them if needed
 	if(min(phy.geiger.friendly$edge.length)<0.00001) {
 		phy.geiger.friendly$edge.length <- phy.geiger.friendly$edge.length + 0.00001
 	}
 	phy <- AdjustForDet(phy)
-	starting.from.geiger<-fitContinuous(phy.geiger.friendly, data, model="BM")$opt
-	starting.values <- c(starting.from.geiger$sigsq, starting.from.geiger$z0, 1,  0) #sigma.sq, mu, beta, vh
+	starting.from.geiger<-fitContinuous(phy.geiger.friendly, data, model="BM", SE=data*NA)$opt
+	starting.values <- c(starting.from.geiger$sigsq, starting.from.geiger$z0, 1,  0, starting.from.geiger$SE) #sigma.sq, mu, beta, vh, SE
 	for (model.index in sequence(length(models))) {
 		if(verbose) {
 			print(paste("Starting model", model.index, "of", length(models)))
 		}
-		free.parameters<-rep(TRUE, 4)
-		names(free.parameters) <- c("sigma.sq", "mu", "bt", "vh")
+		free.parameters<-rep(TRUE, 5)
+		names(free.parameters) <- c("sigma.sq", "mu", "bt", "vh", "SE")
 		model <- models[model.index]
 		if(model==1) {
 			free.parameters[which(names(free.parameters)=="bt")]<-FALSE
@@ -1023,41 +1023,90 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 			free.parameters[which(names(free.parameters)=="bt")]<-FALSE
 			free.parameters[which(names(free.parameters)=="vh")]<-FALSE
 		}
-		previous.run <- optim(par=starting.values[free.parameters], fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])
+		best.run <- optim(par=starting.values[free.parameters], fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])
 		if(verbose) {
-			results.vector<-c(previous.run$value, previous.run$par)
+			results.vector<-c(best.run$value, best.run$par)
 			names(results.vector) <- c("negloglik", names(free.parameters[which(free.parameters)]))
 			print(results.vector)
 		}
-		do.more = TRUE
 		#this is to continue optimizing; we find that optim is too lenient about when it accepts convergence
-		while(do.more) {
-			new.run <- optim(par=previous.run$par, fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])
-			if(previous.run$value - new.run$value < 0.000001) {
-				do.more=FALSE
+		times.without.improvement <- 0
+		while(times.without.improvement<10) {
+			times.without.improvement <- times.without.improvement+1
+			new.run <- best.run
+			if(times.without.improvement%%4==0) {
+				new.run <- optim(par=best.run$par, fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])
+			} else {
+				new.run <- optim(par=GenerateValues(best.run$par, lower=c(0, -Inf, 0, 0, 0)[which(free.parameters)], upper=rep(Inf, sum(free.parameters)), examined.max=10*best.run$par, examined.min=0.1*best.run$par), fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])					
 			}
-			previous.run <- new.run
+			if(new.run$value<best.run$value) {
+				best.run <- new.run
+				times.without.improvement <- 0
+				if(verbose) {
+					print("New improvement found")	
+				}
+			}
 			if(verbose) {
-				results.vector<-c(previous.run$value, previous.run$par)
+				results.vector<-c(best.run$value, best.run$par)
 				names(results.vector) <- c("negloglik", names(free.parameters[which(free.parameters)]))
 				print(results.vector)
 			}
 		}
-		results[[model.index]] <- new.run
-		try(hessians[[model.index]] <- hessian(func=CalculateLikelihood, x=new.run$par, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)]))
-		results.vector.full <- c(NA, NA, 1, 0)
+		results[[model.index]] <- best.run
+		#try(hessians[[model.index]] <- hessian(func=CalculateLikelihood, x=new.run$par, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)]))
+		results.vector.full <- c(NA, NA, 1, 0, 0)
 		names(results.vector.full) <- names(free.parameters)
-		names(new.run$par) <- names(free.parameters[which(free.parameters)])
-		for (i in sequence(length(new.run$par))) {
-			results.vector.full[which(names(results.vector.full)==names(new.run$par)[i])] <- new.run$par[i]
+		names(best.run$par) <- names(free.parameters[which(free.parameters)])
+		for (i in sequence(length(best.run$par))) {
+			results.vector.full[which(names(results.vector.full)==names(best.run$par)[i])] <- best.run$par[i]
 		}
-		local.df <- data.frame(matrix(c(model.index, results.vector.full, AICc(Ntip(phy),k=length(free.parameters[which(free.parameters)]),new.run$value),new.run$value, length(free.parameters[which(free.parameters)])), nrow=1))
+		#print(hessians[[model.index]])
+		#try(print(solve(hessians[[model.index]])))
+		ci.vector<-rep(NA,10)
+		for(parameter in sequence(5)) {
+			names(ci.vector)[1+2*(parameter-1)] <- paste(names(free.parameters)[parameter],"lower", sep=".")
+			names(ci.vector)[2+2*(parameter-1)] <- paste(names(free.parameters)[parameter],"upper", sep=".")
+		}
+
+		if(get.se) {
+			if(verbose) {
+				print("Now doing simulation to estimate SE")	
+			}
+			interval.results <- AdaptiveConfidenceIntervalSampling(best.run$par, fn=CalculateLikelihood, lower=c(0, -Inf, 0, 0, 0)[which(free.parameters)], data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])
+			interval.results.in <- interval.results[which(interval.results[,1]-min(interval.results[,1])<=2),]
+			interval.results.out <- interval.results[which(interval.results[,1]-min(interval.results[,1])>2),]
+			if(plot.se) {
+				pdf(file=paste("Model",models[model.index], "_SE_plot.pdf", sep=""), height=5, width=5*sum(free.parameters))
+				par(mfcol=c(1, sum(free.parameters)))
+				for(parameter in sequence(sum(free.parameters))) {
+					plot(x=interval.results[,parameter+1], y=interval.results[,1], type="n", xlab=names(free.parameters[which(free.parameters)])[parameter], ylab="NegLnL", bty="n", ylim=c(min(interval.results[,1]), min(interval.results[,1])+10))
+					points(x=interval.results.in[,parameter+1], y=interval.results.in[,1], pch=16, col="black")
+					points(x=interval.results.out[,parameter+1], y=interval.results.out[,1], pch=16, col="gray")
+					points(x= best.run$par[parameter], y= best.run$value, pch=1, col="red", cex=1.5)
+				}
+				dev.off()
+				if(verbose) {
+					print(paste("SE plot has been saved in Model",models[model.index], "_SE_plot.pdf in ", getwd(), sep=""))
+				}
+			}
+			free.index=0
+			for(parameter in sequence(5)) {
+				
+				if(free.parameters[parameter]) { #is estimated
+					free.index <- free.index + 1
+					ci.vector[1+2*(parameter-1)] <- min(interval.results.in[,free.index+1])
+					ci.vector[2+2*(parameter-1)] <- max(interval.results.in[,free.index+1])
+				} else {
+					ci.vector[1+2*(parameter-1)] <- results.vector.full[parameter]
+					ci.vector[2+2*(parameter-1)] <- results.vector.full[parameter]	
+				}
+			}
+		}
+		local.df <- data.frame(matrix(c(model.index, results.vector.full, AICc(Ntip(phy),k=length(free.parameters[which(free.parameters)]), best.run$value), best.run$value, length(free.parameters[which(free.parameters)]), ci.vector), nrow=1))
+		colnames(local.df) <- c("Model", names(results.vector.full), "AICc", "NegLogL", "K", names(ci.vector))
 		print(local.df)
-		print(c("Model", names(results.vector.full), "AICc", "NegLogL", "K"))
-		colnames(local.df) <- c("Model", names(results.vector.full), "AICc", "NegLogL", "K")
 		results.summary <- rbind(results.summary, local.df)
-		print(hessians[[model.index]])
-		try(print(solve(hessians[[model.index]])))
+
 	}
 	results.summary <- cbind(results.summary, deltaAICc=results.summary$AICc-min(results.summary$AICc))
 	results.summary<-cbind(results.summary, AkaikeWeight = AkaikeWeight(results.summary$deltaAICc))
@@ -1098,6 +1147,7 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params) {
 	vh <- 0
 	sigma.sq <- x[1]
 	mu <- x[2]
+	SE <- x[length(x)]
 	bt.location <- which(names(actual.params)=="bt")
 	if(length(bt.location)==1) {
 		bt<-x[bt.location]	
@@ -1106,7 +1156,7 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params) {
 	if(length(vh.location)==1) {
 		vh<-x[vh.location]	
 	}
-	if(sigma.sq <0 || vh<0 || bt <= 0.0000001) {
+	if(sigma.sq <0 || vh<0 || bt <= 0.0000001 || SE < 0) {
     	return(badval)
 	}
 	times.original <-vcv.phylo(phy, model="Brownian") #is the initial one based on the tree alone, so just time
@@ -1114,7 +1164,7 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params) {
 	V.modified <<- V.original
 	means.original <- rep(mu, Ntip(phy))
 	names(means.original) <- rownames(V.original)
-	means.modified <<- means.original
+	means.modified <- means.original
 	data <- data[match(names(means.original), names(data))]
 	if(length(data)!=length(means.original)) {
 		stop("Mismatch between names of taxa in data vector and on phy")	
@@ -1134,17 +1184,28 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params) {
 		V.modified[recipient.index, recipient.index] <- V.original[recipient.index, recipient.index] + vh
 		means.modified[recipient.index] <- means.original[recipient.index] + log(bt)
 	}
-	NegLogML <- Ntip(phy)/2*log(2*pi)+1/2*t(data-means.modified)%*%pseudoinverse(V.modified)%*%(data-means.modified) + 1/2*log(abs(det(V.modified))) 
-	if(min(V.modified)<0 || sigma.sq <0 || vh<0 || bt <= 0.0000001 || !is.finite(NegLogML)) {
+	diag(V.modified) <- diag(V.modified)+SE
+	# print("(data-means.modified)")
+	# print((data-means.modified)[1])
+	# print("middle part")
+	# print((1/2)*t(data-means.modified)%*%pseudoinverse(V.modified)%*%(data-means.modified))
+	# print("final part")
+	# print((1/2)*log(abs(det(V.modified))))
+	#Note that we can't do the Ho and Ane 2014 clever trick, since our hybrid network violates the three point condition (consider i, j, k with j as a hybrid of i and k)
+	
+	#Test for problem with V.modified
+	if(length(which(eigen(V.modified)$values<0))>0) {
+		return(badval)	
+	}
+	NegLogML <- (Ntip(phy)/2)*log(2*pi)+(1/2)*t(data-means.modified)%*%pseudoinverse(V.modified)%*%(data-means.modified) + (1/2)*log(abs(det(V.modified))) 
+	
+	if(min(V.modified)<0 || sigma.sq <0 || vh<0 || bt <= 0.0000001 || !is.finite(NegLogML) || SE<0) {
     	NegLogML<-badval 
 	}
 	return(NegLogML[1])
 }
 
-AdaptiveConfidenceIntervalSampling <- function(par, fn, lower=-Inf, upper=Inf, sd.vector = NULL, desired.delta = 2, n.points=1000, ...) {
-	if(is.null(sd.vector)) {
-		sd.vector <- par/10
-	}
+AdaptiveConfidenceIntervalSampling <- function(par, fn, lower=-Inf, upper=Inf, desired.delta = 2, n.points=5000, verbose=TRUE, ...) {
 	starting<-fn(par, ...)
 	if(length(lower) < length(par)) {
 		lower<-rep(lower, length(par))
@@ -1152,45 +1213,50 @@ AdaptiveConfidenceIntervalSampling <- function(par, fn, lower=-Inf, upper=Inf, s
 	if(length(upper) < length(par)) {
 		upper<-rep(upper, length(par))
 	}
-	if(length(sd.vector) < length(par)) {
-		sd.vector<-rep(sd.vector, length(par))
-	}
-	
+	min.multipliers <- rep(1, length(par))
+	max.multipliers <- rep(1, length(par))
 	results<-data.frame(data.frame(matrix(nrow=n.points+1, ncol=1+length(par))))
 	results[1,]<-unname(c(starting, par))
 	for (i in sequence(n.points)) {
 		sim.points<-NA
 		while(is.na(sim.points[1])) {
-			sd.vector<-sd.vector*.95
-			sim.points<-GenerateValues(par, lower, upper, sd.vector)
+			sim.points<-GenerateValues(par, lower, upper, examined.max=max.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, max, na.rm=TRUE), examined.min=min.multipliers*apply(results[which(results[,1]-min(results[,1], na.rm=TRUE)<=desired.delta),-1], 2, min, na.rm=TRUE))
 		}
 		results[i+1,] <- c(fn(sim.points, ...), sim.points)
-		if(results[i+1,1]-starting>desired.delta) {
-			sd.vector<-sd.vector*runif(length(sd.vector),min=0.95, max=1)
-		} else {
-			sd.vector<-sd.vector*runif(length(sd.vector),min=1.1, max=1.2)
-		}
 		if (i%%20==0) {
 			for (j in sequence(length(par))) {
-				returned.range <- range(results[which(results[,1]-min(results[,1])<desired.delta), j+1], na.rm=TRUE)
+				returned.range <- range(results[which((results[,1]-min(results[,1], na.rm=TRUE))<desired.delta), j+1], na.rm=TRUE)
 				total.range <- range(results[,j+1], na.rm=TRUE)
-				if(diff(returned.range)/diff(total.range) > 0.5) { #we are not sampling widely enough
-					sd.vector[j]<-sd.vector[j]*1.5
+				width.ratio <- diff(returned.range)/diff(total.range)
+				if(is.na(width.ratio)) {
+					width.ratio=1	
+				}
+				if(width.ratio > 0.5) { #we are not sampling widely enough
+					min.multipliers[j] <- min.multipliers[j] * 0.9
+					max.multipliers[j] <- max.multipliers[j] * 1.1 #expand the range
+				} else {
+					min.multipliers[j] <- 1
+					max.multipliers[j] <- 1
 				}
 			}
+		}
+		if (verbose && i%%100==0) {
+			print(paste(i, "of", n.points, "done"))	
 		}
 	}
 	return(results)
 }
 
-GenerateValues <- function(par, lower, upper, sd.vector, max.tries=100) {
+GenerateValues <- function(par, lower, upper, max.tries=100, expand.prob=0, examined.max, examined.min) {
 	pass=FALSE
 	tries=0
 	while(!pass && tries<=max.tries) {
 		tries <- tries+1
 		pass=TRUE
-		new.vals <- rnorm(length(par), mean=par, sd=sd.vector)
+		new.vals <- rep(NA, length(par))
 		for(i in sequence(length(par))) {
+			examined.max[i]<-max(0.001, examined.max[i])
+			new.vals[i]<-runif(1, max(lower[i], 0.9*examined.min[i]), min(upper[i], 1.1*examined.max[i]))
 			if(new.vals[i]<lower[i]) {
 				pass=FALSE
 			}

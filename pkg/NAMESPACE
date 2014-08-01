@@ -1,2 +1,2 @@
-export(BMhyd)
-import(corpcor,numDeriv)
+exportPattern("^[^\\.]")
+import(corpcor,numDeriv, ape, geiger)
