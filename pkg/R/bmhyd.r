@@ -989,7 +989,7 @@ se.ave.weight.para<-
 #We may write a utility function for dealing with this case in the future.
 #Note the use of all updates of V.modified based on V.original; we don't want to add v_h to A three different times, for example, for one migration event (so we replace the variance three times based on transformations of the original variance)
 #Note that we do not assume an ultrametric tree
-BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), verbose=TRUE, get.se=TRUE, plot.se=TRUE) {
+BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), verbose=TRUE, get.se=TRUE, plot.se=TRUE, store.sims=FALSE) {
 	if(min(flow$m)<0) {
 		stop("Min value of flow is too low; should be between zero and one")	
 	}
@@ -1004,6 +1004,7 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 		phy.geiger.friendly$edge.length <- phy.geiger.friendly$edge.length + 0.00001
 	}
 	phy <- AdjustForDet(phy)
+	all.sims<-list()
 	starting.from.geiger<-fitContinuous(phy.geiger.friendly, data, model="BM", SE=data*NA)$opt
 	starting.values <- c(starting.from.geiger$sigsq, starting.from.geiger$z0, 1,  0, starting.from.geiger$SE) #sigma.sq, mu, beta, vh, SE
 	for (model.index in sequence(length(models))) {
@@ -1089,6 +1090,9 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 					print(paste("SE plot has been saved in Model",models[model.index], "_SE_plot.pdf in ", getwd(), sep=""))
 				}
 			}
+			if(store.sims) {
+				all.sims<-append(all.sims, interval.results)
+			}
 			free.index=0
 			for(parameter in sequence(5)) {
 				
@@ -1110,6 +1114,9 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 	}
 	results.summary <- cbind(results.summary, deltaAICc=results.summary$AICc-min(results.summary$AICc))
 	results.summary<-cbind(results.summary, AkaikeWeight = AkaikeWeight(results.summary$deltaAICc))
+	if(store.sims) {
+		return(list(results=results.summary, sims=all.sims))	
+	}
 	return(results.summary)
 }
 
@@ -1117,7 +1124,7 @@ DetPass <- function(phy) {
 	det.pass <- TRUE
 	vcv.result <- vcv.phylo(phy)
 	det.tries <- c(det(vcv.result), det(1000*vcv.result), det(0.0001*vcv.result))
-	if(min(det.tries)<=0) {
+	if(min(det.tries)<0) {
 		det.pass <- FALSE
 	}
 	if(sum(is.finite(det.tries))!=length(det.tries)) {
@@ -1141,6 +1148,80 @@ AdjustForDet <- function(phy, max.attempts=100) {
 	return(phy)
 }
 
+GetVModified <- function(x, data, phy, flow, actual.params) {
+	bt <- 1
+	vh <- 0
+	sigma.sq <- x[1]
+	mu <- x[2]
+	SE <- x[length(x)]
+	bt.location <- which(names(actual.params)=="bt")
+	if(length(bt.location)==1) {
+		bt<-x[bt.location]	
+	}
+	vh.location <- which(names(actual.params)=="vh")
+	if(length(vh.location)==1) {
+		vh<-x[vh.location]	
+	}
+	times.original <-vcv.phylo(phy, model="Brownian") #is the initial one based on the tree alone, so just time
+	V.original <- sigma.sq * times.original 
+	V.modified <- V.original
+	for (flow.index in sequence(dim(flow)[1])) {
+		recipient.index <- which(rownames(V.modified)==flow$recipient[flow.index])
+		if(length(recipient.index)!=1) {
+			stop(paste("Tried to find ", flow$recipient[flow.index], " but instead found ", paste(rownames(V.modified)[recipient.index], sep=" ", collapse= " "), "; make sure the taxon names in the flow dataframe recipient match that of your tree", sep=""))
+		}
+		donor.index <- which(rownames(V.modified)==flow$donor[flow.index])
+		if(length(donor.index)!=1) {
+			stop(paste("Tried to find ", flow$donor[flow.index], " but instead found ", paste(rownames(V.modified)[donor.index], sep=" ", collapse= " "), "; make sure the taxon names in the flow dataframe donor match that of your tree", sep=""))
+		}
+		V.modified[recipient.index, donor.index] <- (1-flow$m[flow.index]) * V.original[recipient.index, donor.index] + (flow$m[flow.index]) * (flow$time.from.root[flow.index]) * sigma.sq #covariance is the weighted sum of the covariance from evolution along the tree plus evolution along the migration path
+		V.modified[donor.index, recipient.index] <- V.modified[recipient.index, donor.index]
+		#covariance managed, now to manage the variance
+		V.modified[recipient.index, recipient.index] <- V.original[recipient.index, recipient.index] + vh
+	}
+	diag(V.modified) <- diag(V.modified)+SE
+	return(V.modified)
+}
+
+GetMeansModified <- function(x, data, phy, flow, actual.params) {
+	badval<-(0.5)*.Machine$double.xmax
+	bt <- 1
+	vh <- 0
+	sigma.sq <- x[1]
+	mu <- x[2]
+	SE <- x[length(x)]
+	bt.location <- which(names(actual.params)=="bt")
+	if(length(bt.location)==1) {
+		bt<-x[bt.location]	
+	}
+	vh.location <- which(names(actual.params)=="vh")
+	if(length(vh.location)==1) {
+		vh<-x[vh.location]	
+	}
+	times.original <-vcv.phylo(phy, model="Brownian") #is the initial one based on the tree alone, so just time
+	V.original <- sigma.sq * times.original 
+
+	means.original <- rep(mu, Ntip(phy))
+	names(means.original) <- rownames(V.original)
+	means.modified <- means.original
+
+	means.original <- rep(mu, Ntip(phy))
+	names(means.original) <- rownames(V.original)
+	means.modified <- means.original
+	for (flow.index in sequence(dim(flow)[1])) {
+		recipient.index <- which(rownames(V.original)==flow$recipient[flow.index])
+		if(length(recipient.index)!=1) {
+			stop(paste("Tried to find ", flow$recipient[flow.index], " but instead found ", paste(rownames(V.original)[recipient.index], sep=" ", collapse= " "), "; make sure the taxon names in the flow dataframe recipient match that of your tree", sep=""))
+		}
+		donor.index <- which(rownames(V.original)==flow$donor[flow.index])
+		if(length(donor.index)!=1) {
+			stop(paste("Tried to find ", flow$donor[flow.index], " but instead found ", paste(rownames(V.original)[donor.index], sep=" ", collapse= " "), "; make sure the taxon names in the flow dataframe donor match that of your tree", sep=""))
+		}
+		means.modified[recipient.index] <- means.original[recipient.index] + log(bt)
+	}
+	return(means.modified)
+}
+
 CalculateLikelihood <- function(x, data, phy, flow, actual.params) {
 	badval<-(0.5)*.Machine$double.xmax
 	bt <- 1
@@ -1156,51 +1237,44 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params) {
 	if(length(vh.location)==1) {
 		vh<-x[vh.location]	
 	}
+	V.modified <- GetVModified(x, data, phy, flow, actual.params)
+	means.modified <- GetMeansModified(x, data, phy, flow, actual.params)
 	if(sigma.sq <0 || vh<0 || bt <= 0.0000001 || SE < 0) {
     	return(badval)
 	}
-	times.original <-vcv.phylo(phy, model="Brownian") #is the initial one based on the tree alone, so just time
-	V.original <- sigma.sq * times.original 
-	V.modified <- V.original
-	means.original <- rep(mu, Ntip(phy))
-	names(means.original) <- rownames(V.original)
-	means.modified <- means.original
-	data <- data[match(names(means.original), names(data))]
-	if(length(data)!=length(means.original)) {
+	data <- data[match(names(means.modified), names(data))]
+	if(length(data)!=length(means.modified)) {
 		stop("Mismatch between names of taxa in data vector and on phy")	
 	}
-	for (flow.index in sequence(dim(flow)[1])) {
-		recipient.index <- which(rownames(V.modified)==flow$recipient[flow.index])
-		if(length(recipient.index)!=1) {
-			stop(paste("Tried to find ", flow$recipient[flow.index], " but instead found ", paste(rownames(V.modified)[recipient.index], sep=" ", collapse= " "), "; make sure the taxon names in the flow dataframe recipient match that of your tree", sep=""))
-		}
-		donor.index <- which(rownames(V.modified)==flow$donor[flow.index])
-		if(length(donor.index)!=1) {
-			stop(paste("Tried to find ", flow$donor[flow.index], " but instead found ", paste(rownames(V.modified)[donor.index], sep=" ", collapse= " "), "; make sure the taxon names in the flow dataframe donor match that of your tree", sep=""))
-		}
-		V.modified[recipient.index, donor.index] <- (1-flow$m[flow.index]) * V.original[recipient.index, donor.index] + (flow$m[flow.index]) * (flow$time.from.root[flow.index]) * sigma.sq #covariance is the weighted sum of the covariance from evolution along the tree plus evolution along the migration path
-		V.modified[donor.index, recipient.index] <- V.modified[recipient.index, donor.index]
-		#covariance managed, now to manage the variance
-		V.modified[recipient.index, recipient.index] <- V.original[recipient.index, recipient.index] + vh
-		means.modified[recipient.index] <- means.original[recipient.index] + log(bt)
-	}
-	diag(V.modified) <- diag(V.modified)+SE
-	# print("(data-means.modified)")
-	# print((data-means.modified)[1])
-	# print("middle part")
-	# print((1/2)*t(data-means.modified)%*%pseudoinverse(V.modified)%*%(data-means.modified))
-	# print("final part")
-	# print((1/2)*log(abs(det(V.modified))))
-	#Note that we can't do the Ho and Ane 2014 clever trick, since our hybrid network violates the three point condition (consider i, j, k with j as a hybrid of i and k)
-	
-	#Test for problem with V.modified
-	if(length(which(eigen(V.modified)$values<0))>0) {
-		return(badval)	
-	}
+	#if(length(which(eigen(V.modified)$values<0))>0) {
+	#	last.bad <<- V.modified
+	#	return(badval)	
+	#}
 	NegLogML <- (Ntip(phy)/2)*log(2*pi)+(1/2)*t(data-means.modified)%*%pseudoinverse(V.modified)%*%(data-means.modified) + (1/2)*log(abs(det(V.modified))) 
 	
 	if(min(V.modified)<0 || sigma.sq <0 || vh<0 || bt <= 0.0000001 || !is.finite(NegLogML) || SE<0) {
     	NegLogML<-badval 
+	}
+	print("condition")
+	print(kappa(V.modified, exact=TRUE))
+	print("log(condition)")
+	print(log(kappa(V.modified, exact=TRUE)))
+	#The ratio  of the largest to smallest singular value in the singular value decomposition of a matrix. The base- logarithm of  is an estimate of how many base- digits are lost in solving a linear system with that matrix. In other words, it 
+	#estimates worst-case loss of precision. A system is said to be singular if the condition number is infinite, and ill-conditioned if it is too large, where "too large" means roughly  the precision of matrix entries.
+
+	print("datadiff")
+	print(quantile(data-means.modified))
+	print("middle")
+	print((1/2)*t(data-means.modified)%*%pseudoinverse(V.modified)%*%(data-means.modified))
+	print("end")
+	print((1/2)*log(abs(det(V.modified))) )
+	print(x)
+	print(V.modified[1:10,1:10])
+	print(means.modified)
+	print(NegLogML)
+	if(NegLogML< (-1000)) {
+		bad<<-V.modified
+		stop()	
 	}
 	return(NegLogML[1])
 }
