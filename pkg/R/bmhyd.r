@@ -1161,7 +1161,7 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params) {
 	}
 	times.original <-vcv.phylo(phy, model="Brownian") #is the initial one based on the tree alone, so just time
 	V.original <- sigma.sq * times.original 
-	V.modified <<- V.original
+	V.modified <- V.original
 	means.original <- rep(mu, Ntip(phy))
 	names(means.original) <- rownames(V.original)
 	means.modified <- means.original
@@ -1176,7 +1176,7 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params) {
 		}
 		donor.index <- which(rownames(V.modified)==flow$donor[flow.index])
 		if(length(donor.index)!=1) {
-			stop(paste("Tried to find ", flow$donor[flow.index], " but instead found ", paste(rownames(V.modified)[donor], sep=" ", collapse= " "), "; make sure the taxon names in the flow dataframe donor match that of your tree", sep=""))
+			stop(paste("Tried to find ", flow$donor[flow.index], " but instead found ", paste(rownames(V.modified)[donor.index], sep=" ", collapse= " "), "; make sure the taxon names in the flow dataframe donor match that of your tree", sep=""))
 		}
 		V.modified[recipient.index, donor.index] <- (1-flow$m[flow.index]) * V.original[recipient.index, donor.index] + (flow$m[flow.index]) * (flow$time.from.root[flow.index]) * sigma.sq #covariance is the weighted sum of the covariance from evolution along the tree plus evolution along the migration path
 		V.modified[donor.index, recipient.index] <- V.modified[recipient.index, donor.index]
