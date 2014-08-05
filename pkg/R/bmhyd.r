@@ -1005,9 +1005,17 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 	}
 	phy <- AdjustForDet(phy)
 	all.sims<-list()
+	if(verbose) {
+		print("Getting starting values from Geiger")	
+	}
+
 	starting.from.geiger<-fitContinuous(phy.geiger.friendly, data, model="BM", SE=data*NA)$opt
 	starting.values <- c(starting.from.geiger$sigsq, starting.from.geiger$z0, 1,  0, starting.from.geiger$SE) #sigma.sq, mu, beta, vh, SE
+	if(verbose) {
+		print("Done getting starting values")
+	}
 	for (model.index in sequence(length(models))) {
+		step.count <- 0
 		if(verbose) {
 			print(paste("Starting model", model.index, "of", length(models)))
 		}
@@ -1024,22 +1032,24 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 			free.parameters[which(names(free.parameters)=="bt")]<-FALSE
 			free.parameters[which(names(free.parameters)=="vh")]<-FALSE
 		}
-		best.run <- optim(par=starting.values[free.parameters], fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])
+		best.run <<- optim(par=starting.values[free.parameters], fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])
 		if(verbose) {
-			results.vector<-c(best.run$value, best.run$par)
-			names(results.vector) <- c("negloglik", names(free.parameters[which(free.parameters)]))
+			results.vector<-c(step.count, best.run$value, best.run$par)
+			names(results.vector) <- c("step","negloglik", names(free.parameters[which(free.parameters)]))
 			print(results.vector)
 		}
 		#this is to continue optimizing; we find that optim is too lenient about when it accepts convergence
 		times.without.improvement <- 0
 		while(times.without.improvement<10) {
 			times.without.improvement <- times.without.improvement+1
-			new.run <- best.run
+			new.run <<- best.run
 			if(times.without.improvement%%4==0) {
 				new.run <- optim(par=best.run$par, fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])
 			} else {
 				new.run <- optim(par=GenerateValues(best.run$par, lower=c(0, -Inf, 0, 0, 0)[which(free.parameters)], upper=rep(Inf, sum(free.parameters)), examined.max=10*best.run$par, examined.min=0.1*best.run$par), fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])					
 			}
+			#print("new.run best.run")
+			#print(c(new.run$value, best.run$value))
 			if(new.run$value<best.run$value) {
 				best.run <- new.run
 				times.without.improvement <- 0
@@ -1048,8 +1058,9 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 				}
 			}
 			if(verbose) {
-				results.vector<-c(best.run$value, best.run$par)
-				names(results.vector) <- c("negloglik", names(free.parameters[which(free.parameters)]))
+				step.count <- step.count+1
+				results.vector<-c(step.count, times.without.improvement, best.run$value, best.run$par)
+				names(results.vector) <- c("step", "steps.without.improvement","negloglik", names(free.parameters[which(free.parameters)]))
 				print(results.vector)
 			}
 		}
@@ -1222,7 +1233,10 @@ GetMeansModified <- function(x, data, phy, flow, actual.params) {
 	return(means.modified)
 }
 
-CalculateLikelihood <- function(x, data, phy, flow, actual.params) {
+
+
+#precision is the cutoff at which we think the estimates become unreliable due to ill conditioned matrix
+CalculateLikelihood <- function(x, data, phy, flow, actual.params, precision=2, proportion.mix.with.diag=0) {
 	badval<-(0.5)*.Machine$double.xmax
 	bt <- 1
 	vh <- 0
@@ -1255,26 +1269,58 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params) {
 	if(min(V.modified)<0 || sigma.sq <0 || vh<0 || bt <= 0.0000001 || !is.finite(NegLogML) || SE<0) {
     	NegLogML<-badval 
 	}
-	print("condition")
-	print(kappa(V.modified, exact=TRUE))
-	print("log(condition)")
-	print(log(kappa(V.modified, exact=TRUE)))
+	matrix.condition <- kappa(V.modified, exact=TRUE)
+	#print("condition")
+	#print(kappa(V.modified, exact=TRUE))
+	#print("log(condition)")
+	#print(log(kappa(V.modified, exact=TRUE)))
+	
+	pretty<-c(NegLogML, log(matrix.condition))
+	names(pretty) <- c("NegLogL", "log(matrix.condition")
+	#print(pretty)
+	lnvslogcond<<-rbind(lnvslogcond, pretty)
 	#The ratio  of the largest to smallest singular value in the singular value decomposition of a matrix. The base- logarithm of  is an estimate of how many base- digits are lost in solving a linear system with that matrix. In other words, it 
 	#estimates worst-case loss of precision. A system is said to be singular if the condition number is infinite, and ill-conditioned if it is too large, where "too large" means roughly  the precision of matrix entries.
+	#if(rcond(V.modified) < .Machine$double.eps^2){
+	if(log(matrix.condition) > precision) {
+		proportions <- seq(from=1, to=0, length.out=101) 
+		lnl.vector <- rep(NA, length(proportions))
+		max.diff <- 0
+		for(i in sequence(length(proportions))) {
+			V.modified.by.proportions<-(1-proportions[i]) * V.modified + proportions[i] * diag(dim(V.modified)[1]) * diag(V.modified)
+			local.lnl <- (Ntip(phy)/2)*log(2*pi)+(1/2)*t(data-means.modified)%*%pseudoinverse(V.modified.by.proportions)%*%(data-means.modified) + (1/2)*log(abs(det(V.modified.by.proportions))) 
+			if(i>6) {
+				very.local.lnl <- lnl.vector[(i-6):(i-1)]
+				max.diff <- max(abs(very.local.lnl[-1] - very.local.lnl[-length(very.local.lnl)])) #looking locally for jumps in the likelihood
+				current.diff <- abs(local.lnl - lnl.vector[i-1])
+				if(current.diff > 2 * max.diff) {
+					#print(paste("breaking after ", i))
+					break() #the modified matrix is still poorly conditioned, so stop here	
+				}	
+			}
+			lnl.vector[i] <- local.lnl
+		}
+		proportions<-proportions[which(!is.na(lnl.vector))]
+		lnl.vector<-lnl.vector[which(!is.na(lnl.vector))]
+		NegLogML <- predict(smooth.spline(proportions, lnl.vector), data.frame(proportions =0.000))$y
+		#plot(c(0, proportions), c(NegLogML, lnl.vector), type="n")
+		#points(proportions, lnl.vector, pch=20)
+		#points(0, NegLogML, col="red")
 
-	print("datadiff")
-	print(quantile(data-means.modified))
-	print("middle")
-	print((1/2)*t(data-means.modified)%*%pseudoinverse(V.modified)%*%(data-means.modified))
-	print("end")
-	print((1/2)*log(abs(det(V.modified))) )
-	print(x)
-	print(V.modified[1:10,1:10])
-	print(means.modified)
-	print(NegLogML)
+		#print(paste("Did interpolation, got ", NegLogML))
+		warning("VCV matrix was ill-conditioned, so used splines to estimate its likelihood")
+	}
+	#print("datadiff")
+	#print(quantile(data-means.modified))
+	#print("middle")
+	#print((1/2)*t(data-means.modified)%*%pseudoinverse(V.modified)%*%(data-means.modified))
+	#print("end")
+	#print((1/2)*log(abs(det(V.modified))) )
+	#print(x)
+	#print(V.modified[1:10,1:10])
+	#print(means.modified)
 	if(NegLogML< (-1000)) {
 		bad<<-V.modified
-		stop()	
 	}
 	return(NegLogML[1])
 }
@@ -1343,6 +1389,56 @@ GenerateValues <- function(par, lower, upper, max.tries=100, expand.prob=0, exam
 		return(NA)
 	}
 	return(new.vals)
+}
+
+GetClade <- function(phy, clade.size) {
+	nodes <- phy$edge[,1]
+	subtrees <- lapply(nodes, extract.clade, phy=phy)
+	counts <- sapply(subtrees, Ntip)
+	matches<-subtrees[which(counts==clade.size)]
+	if(length(matches)==0) {
+		return(NA)	
+	}
+	lucky <- matches[sample.int(length(matches),1)][[1]]
+	return(findMRCA(phy, tips=lucky$tip.label, type="node"))	
+}
+
+GetAncestor <- function(phy, node) {
+	return(phy$edge[which(phy$edge[,2]==node),1])	
+}
+
+
+#allow.ghost allows ghost lineage: something that persists for awhile, hybridizes, goes extinct. Otherwise, hybridization events must between coeval edges with extant descendants
+SimulateNetwork <- function(ntax.nonhybrid, ntax.hybrid, flow.rate, origin.type=c("clade", "individual"), birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=TRUE) {
+	library(TreeSim)
+	
+	done = FALSE
+	while(!done) {
+		phy <-  sim.bd.taxa.age(n=ntax.nonhybrid+ntax.hybrid, numbsim=1, lambda=birth, mu=0.5, frac = sample.f, age=tree.height, mrca = TRUE)
+		donors <- c()
+		recipients <- c()
+		if (origin.type=="clade") {
+			mrca.node <- GetClade(phy, ntax.hybrid)
+			if(is.na(mrca.node)) {
+				done=FALSE
+				break()	
+			}
+			recipients <- getDescendants(phy, node=mrca.node)
+			longest.from.root <- nodeheight(phy, node=mrca.node)
+			shortest.from.root <- nodeheight(phy, node=GetAncestor(phy, mrca.node))
+			all.heights <- nodeHeights(phy)
+			qualifying.upper <- sequence(dim(all.heights)[1])
+			qualifying.lower <- which(all.heights[,1]<longest.from.root)
+			if(!allow.ghost) {
+				qualifying.upper <- which(all.heights[,2]>shortest.from.root)
+			}
+			#next, filter for ones that aren't ancestors of the hybrid
+			#then get the descendants of the donor node
+			#and all all of that to flow
+		} else {
+			
+		}
+	}
 }
 
 
