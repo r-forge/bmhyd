@@ -1159,7 +1159,7 @@ AdjustForDet <- function(phy, max.attempts=100) {
 	return(phy)
 }
 
-GetVModified <- function(x, data, phy, flow, actual.params) {
+GetVModified <- function(x, phy, flow, actual.params) {
 	bt <- 1
 	vh <- 0
 	sigma.sq <- x[1]
@@ -1194,7 +1194,7 @@ GetVModified <- function(x, data, phy, flow, actual.params) {
 	return(V.modified)
 }
 
-GetMeansModified <- function(x, data, phy, flow, actual.params) {
+GetMeansModified <- function(x, phy, flow, actual.params) {
 	badval<-(0.5)*.Machine$double.xmax
 	bt <- 1
 	vh <- 0
@@ -1251,8 +1251,8 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params, precision=2, 
 	if(length(vh.location)==1) {
 		vh<-x[vh.location]	
 	}
-	V.modified <- GetVModified(x, data, phy, flow, actual.params)
-	means.modified <- GetMeansModified(x, data, phy, flow, actual.params)
+	V.modified <- GetVModified(x, phy, flow, actual.params)
+	means.modified <- GetMeansModified(x, phy, flow, actual.params)
 	if(sigma.sq <0 || vh<0 || bt <= 0.0000001 || SE < 0) {
     	return(badval)
 	}
@@ -1511,6 +1511,18 @@ PlotNetwork <- function(phy, flow) {
 		arrows(x0=flow$time.from.root[i], x1=flow$time.from.root[i], y1=y1, y0=y0, col="red")
 		#grid.arrows(x=c(flow$time.from.root[i],flow$time.from.root[i]), y=c(y0, y1))
 	}
+}
+
+#		names(free.parameters) <- c("sigma.sq", "mu", "bt", "vh", "SE")
+#GetMeansModified <- function(x, phy, flow, actual.params) {
+#params must be named vector
+SimulateTipData <- function(phy, flow, params) {
+	library(mvtnorm)
+	VCV.modified <- GetVModified(params, phy, flow, params)
+	Means.modified <- GetMeansModified(params, phy, flow, params)
+	tips <- rmvnorm(n=1, mean = Means.modified, sigma = VCV.modified)[1,]
+	names(tips) <- rownames(VCV.modified)
+	return(tips)
 }
 
 BMhyd.old<-function(data, network){
