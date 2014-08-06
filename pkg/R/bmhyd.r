@@ -1409,39 +1409,109 @@ GetAncestor <- function(phy, node) {
 
 
 #allow.ghost allows ghost lineage: something that persists for awhile, hybridizes, goes extinct. Otherwise, hybridization events must between coeval edges with extant descendants
-SimulateNetwork <- function(ntax.nonhybrid, ntax.hybrid, flow.rate, origin.type=c("clade", "individual"), birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=TRUE) {
+SimulateNetwork <- function(ntax.nonhybrid=100, ntax.hybrid=10, flow.proportion=0.5, origin.type=c("clade", "individual"), birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=FALSE) {
 	library(TreeSim)
-	
+	library(phytools)
 	done = FALSE
+	used.recipients <- c()
+	available.recipient.ids <- sequence(ntax.nonhybrid + ntax.hybrid)
+	flow <- data.frame()
+	phy<-NA
+	phy <-  sim.bd.taxa.age(n=ntax.nonhybrid+ntax.hybrid, numbsim=1, lambda=birth, mu=0.5, frac = sample.f, age=tree.height, mrca = TRUE)[[1]]
+	if(origin.type=="clade" && ntax.hybrid==1) {
+		warning("For ntax.hybrid = 1 and clade sampling, this will do individual sampling instead (which is equivalent in this case)")
+		origin.type<-"individual"	
+	}
+	if(origin.type=="clade") {
+		while(is.na(GetClade(phy, ntax.hybrid))) { #not all trees of a given size have a clade of a given size, so may need to resimulate it
+			phy <-  sim.bd.taxa.age(n=ntax.nonhybrid+ntax.hybrid, numbsim=1, lambda=birth, mu=0.5, frac = sample.f, age=tree.height, mrca = TRUE)[[1]]
+		}
+	}
 	while(!done) {
-		phy <-  sim.bd.taxa.age(n=ntax.nonhybrid+ntax.hybrid, numbsim=1, lambda=birth, mu=0.5, frac = sample.f, age=tree.height, mrca = TRUE)
 		donors <- c()
 		recipients <- c()
+		recipient.ids <- c()
+		focal.node <- c()
 		if (origin.type=="clade") {
-			mrca.node <- GetClade(phy, ntax.hybrid)
-			if(is.na(mrca.node)) {
+			focal.node <- GetClade(phy, ntax.hybrid)
+			if(is.na(focal.node)) {
 				done=FALSE
 				break()	
 			}
-			recipients <- getDescendants(phy, node=mrca.node)
-			longest.from.root <- nodeheight(phy, node=mrca.node)
-			shortest.from.root <- nodeheight(phy, node=GetAncestor(phy, mrca.node))
-			all.heights <- nodeHeights(phy)
-			qualifying.upper <- sequence(dim(all.heights)[1])
-			qualifying.lower <- which(all.heights[,1]<longest.from.root)
-			if(!allow.ghost) {
-				qualifying.upper <- which(all.heights[,2]>shortest.from.root)
-			}
-			#next, filter for ones that aren't ancestors of the hybrid
-			#then get the descendants of the donor node
-			#and all all of that to flow
+			recipients <- phy$tip.label[getDescendants(phy, node=focal.node)]
+			recipients <- recipients[!is.na(recipients)] #since we want just the tips
+			recipient.ids <- which(phy$tip.label %in% recipients)
+			used.recipients <- append(used.recipients, recipients)
 		} else {
-			
+			focal.node<-sample(available.recipient.ids, 1, replace=FALSE)
+			recipient.ids <- focal.node
+			recipients <- phy$tip.label[focal.node]
+			used.recipients <- append(used.recipients, recipients)
+		}
+		available.recipient.ids <- available.recipient.ids[!available.recipient.ids %in% recipient.ids]
+		longest.from.root <- nodeheight(phy, node=focal.node)
+		shortest.from.root <- nodeheight(phy, node=GetAncestor(phy, focal.node))
+		all.heights <- nodeHeights(phy)
+		#idea here: take a recipient clade. The gene flow must happen on its stem edge, which starts at shortest.from.root and goes up to longest.from.root. Gene flow can't go back in time
+		qualifying.lower <- which(all.heights[,1]<longest.from.root) #if this is false, gene flow goes back in time
+		qualifying.upper <- sequence(dim(all.heights)[1]) #in general, gene flow can go forward in time via ghost lineages
+		if(!allow.ghost) {
+			qualifying.upper <- which(all.heights[,2]>shortest.from.root) #if no ghost lineages, then there must be temporal overlap between the donor and recipient lineages. So the tipward end of the donor edge must be later than the rootward end of the recipient edge
+		}
+		qualifying.upper <- qualifying.upper[which(phy$edge[qualifying.upper,2]!=focal.node)] #let's not hybridize with ourselves
+		qualifying.all <- qualifying.upper[qualifying.upper %in% qualifying.lower]
+		if(length(qualifying.all)==0) {
+			break()	
+		}
+		donor.edge <- sample(qualifying.all, 1)
+		donors <- phy$tip.label[getDescendants(phy, phy$edge[donor.edge,2])]
+		donors <- donors[!is.na(donors)] #getDescendants includes all descendant nodes, including internal ones. We just want the terminal taxa
+		time.in <- runif(1, min=shortest.from.root, max=longest.from.root)
+		if (!allow.ghost) {
+			time.in <- runif(1, min=max(shortest.from.root, all.heights[donor.edge,1]), max=min(longest.from.root, all.heights[donor.edge,2])) #if no ghost lineages, must move from the overlapping interval	
+		}		
+		pairs <- expand.grid(donors, recipients)
+		for (pairs.index in sequence(dim(pairs)[1])) {
+			flow <- rbind(flow, data.frame(donor=pairs[pairs.index,1], recipient=pairs[pairs.index,2], m=flow.proportion, time.from.root=time.in, stringsAsFactors=FALSE))	
+		}
+		if(length(used.recipients)==ntax.hybrid) {
+			done=TRUE
 		}
 	}
+	flow$donor <- as.character(flow$donor)
+	flow$recipient <- as.character(flow$recipient)
+	flow$m <- as.numeric(as.character(flow$m))
+	flow$time.from.root <-as.numeric(as.character(flow$time.from.root))
+	return(list(phy=phy, flow=flow))
 }
 
-
+PlotNetwork <- function(phy, flow) {
+	library(phylobase)
+	phy<-reorder(phy, "pruningwise")
+	phy4 <- as(phy, "phylo4")
+	xxyy <- phyloXXYY(phy4)
+	#plot(phy4)
+	plot(x=c(min(xxyy$xx), 1.1*max(xxyy$xx)), y=range(xxyy$yy), type="n", xaxt="n", xlab="", yaxt="n", ylab="", bty="n")
+	arrows(x0=xxyy$segs$v0x, x1=xxyy$segs$v1x, y0=xxyy$segs$v0y, y1=xxyy$segs$v1y, length=0)
+	arrows(x0=xxyy$segs$h0x, x1=xxyy$segs$h1x, y0=xxyy$segs$h0y, y1=xxyy$segs$h1y, length=0)
+	text(x=rep(max(xxyy$xx), Ntip(phy)), y=xxyy$yy[which(edges(phy4)[xxyy$eorder,2] %in% sequence(Ntip(phy)))], names(getNode(phy4, xxyy$torder)), pos=4)
+	for (i in sequence(dim(flow)[1])) {
+		recipient.node <- getNode(phy4, flow$recipient[i])
+		recipient.path <- c(recipient.node, ancestors(phy4, recipient.node))
+		recipient.path.heights <- nodeDepth(phy4, recipient.path)
+		valid.recipients <- recipient.path[which(recipient.path.heights > flow$time.from.root[i])]
+		recipient <- valid.recipients[length(valid.recipients)] #do it from the earliest qualifying tipward node
+		y1 <- xxyy$yy[which(edges(phy4)[xxyy$eorder,2] == recipient)]
+		donor.node <- getNode(phy4, flow$donor[i])
+		donor.path <- c(donor.node, ancestors(phy4, donor.node))
+		donor.path.heights <- nodeDepth(phy4, donor.path)
+		valid.donors <- donor.path[which(donor.path.heights > flow$time.from.root[i])]
+		donor <- valid.donors[length(valid.donors)] #do it from the earliest qualifying tipward node
+		y0 <- xxyy$yy[which(edges(phy4)[xxyy$eorder,2] == donor)]
+		arrows(x0=flow$time.from.root[i], x1=flow$time.from.root[i], y1=y1, y0=y0, col="red")
+		#grid.arrows(x=c(flow$time.from.root[i],flow$time.from.root[i]), y=c(y0, y1))
+	}
+}
 
 BMhyd.old<-function(data, network){
   Y<-data
