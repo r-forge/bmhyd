@@ -1,4 +1,4 @@
-library(BMhyd)
+#library(BMhyd)
 
 non.hybrid.vector <- c(30, 100)
 hybrid.vector <- c(1, 5, 10)
