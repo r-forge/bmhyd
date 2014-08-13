@@ -54,7 +54,7 @@ weight.para.value<-
 #We may write a utility function for dealing with this case in the future.
 #Note the use of all updates of V.modified based on V.original; we don't want to add v_h to A three different times, for example, for one migration event (so we replace the variance three times based on transformations of the original variance)
 #Note that we do not assume an ultrametric tree
-BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), verbose=TRUE, get.se=TRUE, plot.se=TRUE, store.sims=FALSE, precision=2, auto.adjust=FALSE) {
+BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), verbose=TRUE, get.se=TRUE, plot.se=TRUE, store.sims=FALSE, precision=2, auto.adjust=FALSE, likelihood.precision=0.001) {
 	if(min(flow$m)<0) {
 		stop("Min value of flow is too low; should be between zero and one")	
 	}
@@ -118,11 +118,17 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 			#print("new.run best.run")
 			#print(c(new.run$value, best.run$value))
 			if(new.run$value<best.run$value) {
-				best.run <- new.run
-				times.without.improvement <- 0
-				if(verbose) {
-					print("New improvement found")	
+				if(best.run$value - new.run$value > likelihood.precision) {
+					times.without.improvement <- 0
+					if(verbose) {
+						print("New improvement found, resetting step counter")
+					}
+				} else {
+					if(verbose) {
+						print("New improvement found, but slight; taking the best value, but not resetting the step counter")
+					}
 				}
+				best.run <- new.run
 			}
 			if(verbose) {
 				step.count <- step.count+1
