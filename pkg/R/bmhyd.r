@@ -538,7 +538,7 @@ SimulateNetwork <- function(ntax.nonhybrid=100, ntax.hybrid=10, flow.proportion=
 		donor.edge <- sample(qualifying.all, 1)
 		donors <- phy$tip.label[getDescendants(phy, phy$edge[donor.edge,2])]
 		donors <- donors[!is.na(donors)] #getDescendants includes all descendant nodes, including internal ones. We just want the terminal taxa
-		time.in <- runif(1, min=shortest.from.root, max=longest.from.root)
+		time.in <- runif(1, min=max(all.heights[donor.edge,1],shortest.from.root), max=longest.from.root)
 		time.out <- runif(1, min=all.heights[donor.edge,1], max=min(time.in, all.heights[donor.edge,2]))
 		if (!allow.ghost) {
 			time.in <- runif(1, min=max(shortest.from.root, all.heights[donor.edge,1]), max=min(longest.from.root, all.heights[donor.edge,2])) #if no ghost lineages, must move from the overlapping interval	
@@ -654,16 +654,16 @@ AttachHybridsToDonor <- function(phy, flow, suffix="_DUPLICATE") {
 #GetMeansModified <- function(x, phy, flow, actual.params) {
 #params must be named vector
 SimulateTipData <- function(phy, flow, params, suffix="_DUPLICATE") {
-	flow.clades <- LumpIntoClades(phy, flow)
-	recipients <- c()
-	for (i in sequence(dim(flow.clades)[1])) {
-		recipients<-c(recipients, strsplit(flow.clades$recipient.clades, ",")[[1]])
-	}
-	if(length(unique(recipients)) != length(recipients)) {
-		print(flow)
-		print(flow.clades)
-		stop("This function only works if each taxon of hybrid origin only appears once as a recipient")
-	}
+#	flow.clades <- LumpIntoClades(phy, flow)
+#	recipients <- c()
+#	for (i in sequence(dim(flow.clades)[1])) {
+#		recipients<-c(recipients, strsplit(flow.clades$recipient.clades, ",")[[1]])
+#	}
+#	if(length(unique(recipients)) != length(recipients)) {
+#		print(flow)
+#		print(flow.clades)
+#		stop("This function only works if each taxon of hybrid origin only appears once as a recipient")
+#	}
 	phy.merged <- AttachHybridsToDonor(phy, flow, suffix=suffix)
 	phy.merged$edge.length <- phy.merged$edge.length*params["sigma.sq"]
 	phy.merged$edge.length[which(phy.merged$edge[,2] <= Ntip(phy.merged))] <- phy.merged$edge.length[which(phy.merged$edge[,2] <= Ntip(phy.merged))]+params["SE"]
