@@ -660,6 +660,8 @@ SimulateTipData <- function(phy, flow, params, suffix="_DUPLICATE") {
 		recipients<-c(recipients, strsplit(flow.clades$recipient.clades, ",")[[1]])
 	}
 	if(length(unique(recipients)) != length(recipients)) {
+		print(flow)
+		print(flow.clades)
 		stop("This function only works if each taxon of hybrid origin only appears once as a recipient")
 	}
 	phy.merged <- AttachHybridsToDonor(phy, flow, suffix=suffix)
