@@ -643,7 +643,6 @@ AttachHybridsToDonor <- function(phy, flow, suffix="_DUPLICATE") {
 		pulled.clade$root.edge<-max(branching.times(phy)) - max(branching.times(pulled.clade)) - flow.clades$time.from.root.donor[i]
 
 		phy.merged <- bind.tree(phy.merged, pulled.clade, attachment.crown.node, position=phy.merged$edge.length[which(phy.merged$edge[,2]==attachment.crown.node)] - (flow.clades$time.from.root.donor[i]-nodeheight(phy.merged, attachment.stem.node)))
-		plot(phy.merged)
 	}
 	return(phy.merged)
 }
