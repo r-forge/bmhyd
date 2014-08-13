@@ -654,7 +654,12 @@ AttachHybridsToDonor <- function(phy, flow, suffix="_DUPLICATE") {
 #GetMeansModified <- function(x, phy, flow, actual.params) {
 #params must be named vector
 SimulateTipData <- function(phy, flow, params, suffix="_DUPLICATE") {
-	if(length(unique(flow$recipient)) != length(flow$recipient)) {
+	flow.clades <- LumpIntoClades(phy, flow)
+	recipients <- c()
+	for (i in sequence(dim(flow.clades)[1])) {
+		recipients<-c(recipients, strsplit(flow.clades$recipient.clades, ",")[[1]])
+	}
+	if(length(unique(recipients)) != length(recipients)) {
 		stop("This function only works if each taxon of hybrid origin only appears once as a recipient")
 	}
 	phy.merged <- AttachHybridsToDonor(phy, flow, suffix=suffix)
