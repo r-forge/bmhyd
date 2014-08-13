@@ -628,9 +628,9 @@ AttachHybridsToDonor <- function(phy, flow, suffix="_DUPLICATE") {
 		if(length(taxa.to.retain)>1) {
 			pulled.clade <- drop.tip(phy, phy$tip.label[!phy$tip.label %in% taxa.to.retain])
 		} else {
-			pulled.clade <- structure(list(edge = structure(c(2L, 1L), .Dim = c(1L, 
-2L)), edge.length = c(flow.clades$time.from.root.recipient[i]), 
-    tip.label = c(taxa.to.retain), Nnode = 1L), .Names = c("edge", 
+			pulled.clade <- structure(list(edge = structure(c(3L, 3L, 1L, 2L), .Dim = c(2L, 
+2L)), edge.length = rep(flow.clades$time.from.root.recipient[i],2), 
+    tip.label = c(taxa.to.retain, "DUMMY"), Nnode = 1L), .Names = c("edge", 
 "edge.length", "tip.label", "Nnode"), class = "phylo")
 		}
 		pulled.clade$tip.label <- paste(pulled.clade$tip.label, suffix, sep="")
@@ -643,6 +643,9 @@ AttachHybridsToDonor <- function(phy, flow, suffix="_DUPLICATE") {
 		pulled.clade$root.edge<-max(branching.times(phy)) - max(branching.times(pulled.clade)) - flow.clades$time.from.root.donor[i]
 
 		phy.merged <- bind.tree(phy.merged, pulled.clade, attachment.crown.node, position=phy.merged$edge.length[which(phy.merged$edge[,2]==attachment.crown.node)] - (flow.clades$time.from.root.donor[i]-nodeheight(phy.merged, attachment.stem.node)))
+		if(length(taxa.to.retain)==1) {
+			phy.merged <- drop.tip(phy.merged, paste("DUMMY", suffix, sep=""))
+		}
 	}
 	return(phy.merged)
 }
