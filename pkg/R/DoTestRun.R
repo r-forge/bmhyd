@@ -35,7 +35,7 @@ RunFromSet<-function(x, id) {
 }
 
 #RunFromSet(possible.sets[1,], id="1")
-library(foreach)
-library(doMC)
-options(cores=12)
-foreach(i=sequence(dim(possible.sets)[1])) %dopar% RunFromSet(possible.sets[i,], id=as.character(i))
+#library(foreach)
+#library(doMC)
+#options(cores=12)
+#foreach(i=sequence(dim(possible.sets)[1])) %dopar% RunFromSet(possible.sets[i,], id=as.character(i))
