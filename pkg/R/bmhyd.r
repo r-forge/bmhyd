@@ -597,14 +597,79 @@ PlotNetwork <- function(phy, flow, col.non="black", col.hybrid="red") {
 	}
 }
 
+LumpIntoClades <- function(phy, flow) {
+	flow.string <- paste(flow$time.from.root.donor, flow$time.from.root.recipient, flow$m)
+	flow.together <- cbind(flow.string=flow.string, flow)
+	unique.flow.strings <- unique(flow.string)
+	donor.clades <- c()
+	recipient.clades <- c()
+	m.clades <-c()
+	time.from.root.donor.clades <- c()
+	time.from.root.recipient.clades <- c()
+	for (i in sequence(length(unique.flow.strings))) {
+		flow.local <- flow.together[which(flow.together$flow.string == unique.flow.strings[i]), ]
+		donor.clades <- append(donor.clades, paste(unique(flow.local$donor), collapse=","))
+		recipient.clades <- append(recipient.clades, paste(unique(flow.local$recipient), collapse=","))
+		m.clades <-append(m.clades, flow.local$m[1])
+		time.from.root.donor.clades <- append(time.from.root.donor.clades, flow.local$time.from.root.donor[1])
+		time.from.root.recipient.clades <- append(time.from.root.recipient.clades, flow.local$time.from.root.recipient[1])
+
+	}
+	return(data.frame(donor.clades = donor.clades, recipient.clades=recipient.clades, m=m.clades, time.from.root.donor=time.from.root.donor.clades, time.from.root.recipient = time.from.root.recipient.clades, stringsAsFactors=FALSE))
+}
+
+AttachHybridsToDonor <- function(phy, flow, suffix="_DUPLICATE") {
+	flow.clades <- LumpIntoClades(phy, flow)
+	phy.merged <- phy
+	for (i in sequence(dim(flow.clades)[1])) {
+		taxa.to.retain <- strsplit(flow.clades$recipient.clades[i], ",")[[1]]
+		donor.taxa <- strsplit(flow.clades$donor.clades[i], ",")[[1]]
+		pulled.clade <- c()
+		if(length(taxa.to.retain)>1) {
+			pulled.clade <- drop.tip(phy, phy$tip.label[!phy$tip.label %in% taxa.to.retain])
+		} else {
+			pulled.clade <- structure(list(edge = structure(c(2L, 1L), .Dim = c(1L, 
+2L)), edge.length = c(flow.clades$time.from.root.recipient[i]), 
+    tip.label = c(taxa.to.retain), Nnode = 1L), .Names = c("edge", 
+"edge.length", "tip.label", "Nnode"), class = "phylo")
+		}
+		pulled.clade$tip.label <- paste(pulled.clade$tip.label, suffix, sep="")
+		attachment.crown.node <- which(phy.merged$tip.label==donor.taxa[1])
+		if(length(donor.taxa)>1) {
+			attachment.crown.node <- findMRCA(phy.merged, tips=donor.taxa, type=c("node"))
+		}
+		attachment.stem.node <- GetAncestor(phy.merged, attachment.crown.node)
+		
+		pulled.clade$root.edge<-max(branching.times(phy)) - max(branching.times(pulled.clade)) - flow.clades$time.from.root.donor[i]
+
+		phy.merged <- bind.tree(phy.merged, pulled.clade, attachment.crown.node, position=phy.merged$edge.length[which(phy.merged$edge[,2]==attachment.crown.node)] - (flow.clades$time.from.root.donor[i]-nodeheight(phy.merged, attachment.stem.node)))
+		plot(phy.merged)
+	}
+	return(phy.merged)
+}
+
+
+
 #		names(free.parameters) <- c("sigma.sq", "mu", "bt", "vh", "SE")
 #GetMeansModified <- function(x, phy, flow, actual.params) {
 #params must be named vector
-SimulateTipData <- function(phy, flow, params) {
-	library(mvtnorm)
-	VCV.modified <- GetVModified(params, phy, flow, params)
-	Means.modified <- GetMeansModified(params, phy, flow, params)
-	tips <- rmvnorm(n=1, mean = Means.modified, sigma = VCV.modified)[1,]
-	names(tips) <- rownames(VCV.modified)
+SimulateTipData <- function(phy, flow, params, suffix="_DUPLICATE") {
+	if(length(unique(flow$recipient)) != length(flow$recipient)) {
+		stop("This function only works if each taxon of hybrid origin only appears once as a recipient")
+	}
+	phy.merged <- AttachHybridsToDonor(phy, flow, suffix=suffix)
+	phy.merged$edge.length <- phy.merged$edge.length*params["sigma.sq"]
+	phy.merged$edge.length[which(phy.merged$edge[,2] <= Ntip(phy.merged))] <- phy.merged$edge.length[which(phy.merged$edge[,2] <= Ntip(phy.merged))]+params["SE"]
+	tips <- sim.char(phy.merged, par=matrix(1, nrow=1, ncol=1), nsim=1, model="BM", root=params["mu"])[,,1]	#we have already done the scaling and SE
+	hybrid.name.root <- gsub(suffix, "", phy.merged$tip.label[grepl(suffix,  phy.merged$tip.label)])
+	for (i in sequence(length(hybrid.name.root))) {
+		focal.tips <- tips[c(hybrid.name.root[i], paste(hybrid.name.root[i], suffix, sep=""))]
+		focal.m <- flow$m[which(flow$recipient==hybrid.name.root[i])]
+		focal.tips.bt <- focal.tips + log(params['bt'])
+		tip.mean <- focal.m*focal.tips.bt[1] + (1-focal.m) * focal.tips.bt[2]
+		tip.final <- rnorm(1, mean=tip.mean, sd=sqrt(params['vh']))
+		tips[hybrid.name.root]<-tip.final
+	}
+	tips<-tips[!grepl(suffix, names(tips))]
 	return(tips)
 }
