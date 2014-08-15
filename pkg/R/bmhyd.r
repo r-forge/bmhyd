@@ -363,11 +363,15 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params, precision=2, 
 			local.lnl <- (Ntip(phy)/2)*log(2*pi)+(1/2)*t(data-means.modified)%*%pseudoinverse(V.modified.by.proportions)%*%(data-means.modified) + (1/2)*log(abs(det(V.modified.by.proportions))) 
 			if(i>6) {
 				very.local.lnl <- lnl.vector[(i-6):(i-1)]
-				max.diff <- max(abs(very.local.lnl[-1] - very.local.lnl[-length(very.local.lnl)])) #looking locally for jumps in the likelihood
-				current.diff <- abs(local.lnl - lnl.vector[i-1])
-				if(current.diff > 2 * max.diff) {
-					#print(paste("breaking after ", i))
-					break() #the modified matrix is still poorly conditioned, so stop here	
+				max.diff <- NA
+				try(max.diff <- max(abs(very.local.lnl[-1] - very.local.lnl[-length(very.local.lnl)])) #looking locally for jumps in the likelihood)
+				current.diff <- NA
+				try(current.diff <- abs(local.lnl - lnl.vector[i-1]))
+				if(!is.na(max.diff) && !is.na(current.diff)) {
+					if(current.diff > 2 * max.diff) {
+						#print(paste("breaking after ", i))
+						break() #the modified matrix is still poorly conditioned, so stop here	
+					}
 				}	
 			}
 			lnl.vector[i] <- local.lnl
