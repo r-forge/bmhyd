@@ -99,7 +99,7 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 			free.parameters[which(names(free.parameters)=="bt")]<-FALSE
 			free.parameters[which(names(free.parameters)=="vh")]<-FALSE
 		}
-		best.run <- optim(par=starting.values[free.parameters], fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)], precision=precision)
+		best.run <- optim(par=starting.values[free.parameters], fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)], precision=precision, allow.extrapolation=allow.extrapolation)
 		if(verbose) {
 			results.vector<-c(step.count, best.run$value, best.run$par)
 			names(results.vector) <- c("step","negloglik", names(free.parameters[which(free.parameters)]))
@@ -111,9 +111,9 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 			times.without.improvement <- times.without.improvement+1
 			new.run <- best.run
 			if(times.without.improvement%%4==0) {
-				new.run <- optim(par=best.run$par, fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)], precision=precision)
+				new.run <- optim(par=best.run$par, fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)], precision=precision, allow.extrapolation=allow.extrapolation)
 			} else {
-				new.run <- optim(par=GenerateValues(best.run$par, lower=c(0, -Inf, 0, 0, 0)[which(free.parameters)], upper=rep(Inf, sum(free.parameters)), examined.max=10*best.run$par, examined.min=0.1*best.run$par), fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)], precision=precision)					
+				new.run <- optim(par=GenerateValues(best.run$par, lower=c(0, -Inf, 0, 0, 0)[which(free.parameters)], upper=rep(Inf, sum(free.parameters)), examined.max=10*best.run$par, examined.min=0.1*best.run$par), fn=CalculateLikelihood, method=opt.method, hessian=FALSE, data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)], precision=precision, allow.extrapolation=allow.extrapolation)					
 			}
 			#print("new.run best.run")
 			#print(c(new.run$value, best.run$value))
@@ -157,7 +157,7 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 			if(verbose) {
 				print("Now doing simulation to estimate SE")	
 			}
-			interval.results <- AdaptiveConfidenceIntervalSampling(best.run$par, fn=CalculateLikelihood, lower=c(0, -Inf, 0, 0, 0)[which(free.parameters)], data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)])
+			interval.results <- AdaptiveConfidenceIntervalSampling(best.run$par, fn=CalculateLikelihood, lower=c(0, -Inf, 0, 0, 0)[which(free.parameters)], data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)], allow.extrapolation=allow.extrapolation)
 			interval.results.in <- interval.results[which(interval.results[,1]-min(interval.results[,1])<=2),]
 			interval.results.out <- interval.results[which(interval.results[,1]-min(interval.results[,1])>2),]
 			if(plot.se) {
@@ -167,7 +167,7 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 					plot(x=interval.results[,parameter+1], y=interval.results[,1], type="n", xlab=names(free.parameters[which(free.parameters)])[parameter], ylab="NegLnL", bty="n", ylim=c(min(interval.results[,1]), min(interval.results[,1])+10))
 					points(x=interval.results.in[,parameter+1], y=interval.results.in[,1], pch=16, col="black")
 					points(x=interval.results.out[,parameter+1], y=interval.results.out[,1], pch=16, col="gray")
-					points(x= best.run$par[parameter], y= best.run$value, pch=1, col="red", cex=1.5)
+					#points(x= best.run$par[parameter], y= best.run$value, pch=1, col="red", cex=1.5)
 				}
 				dev.off()
 				if(verbose) {
@@ -309,7 +309,7 @@ GetMeansModified <- function(x, phy, flow, actual.params) {
 
 
 #precision is the cutoff at which we think the estimates become unreliable due to ill conditioned matrix
-CalculateLikelihood <- function(x, data, phy, flow, actual.params, precision=2, proportion.mix.with.diag=0) {
+CalculateLikelihood <- function(x, data, phy, flow, actual.params, precision=2, proportion.mix.with.diag=0, allow.extrapolation=FALSE) {
 	badval<-(0.5)*.Machine$double.xmax
 	bt <- 1
 	vh <- 0
@@ -377,10 +377,17 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params, precision=2, 
 		NegLogML <- predict(smooth.spline(proportions, lnl.vector), data.frame(proportions =0.000))$y
 		#plot(c(0, proportions), c(NegLogML, lnl.vector), type="n")
 		#points(proportions, lnl.vector, pch=20)
-		#points(0, NegLogML, col="red")
+		#points(0, NegLogML, col="red")	
+		if(abs(NegLogML - lnl.vector[length(lnl.vector)]) >0.0000001) {	#means this point was extrapolated b/c the likelihood surface got strange
+			if(allow.extrapolation) {
+				warning("VCV matrix was ill-conditioned, so used splines to estimate its likelihood (allow.extrapolation=TRUE). This could lead to very bad estimates of the likelihood")
+			} else {
+				NegLogML <- badval
+				warning("VCV matrix was ill-conditioned at some points in parameter space; treated the likelihood at these points as a bad value rather than estimating it. If you think the MLE is in this region, you could try allow.extrapolation=TRUE")
+			}
+		}
 
 		#print(paste("Did interpolation, got ", NegLogML))
-		warning("VCV matrix was ill-conditioned, so used splines to estimate its likelihood")
 	}
 	#print("datadiff")
 	#print(quantile(data-means.modified))
