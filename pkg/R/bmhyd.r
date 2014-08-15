@@ -232,6 +232,17 @@ AdjustForDet <- function(phy, max.attempts=100) {
 	return(phy)
 }
 
+
+#fast.inverse.armadillo <- cxxfunction ( signature ( vs ="numeric") ,
+#plugin ="RcppArmadillo", body = '
+#arma::mat v = Rcpp::as<arma::mat>(vs);
+#arma::mat vinv = arma::pinv(v) ;
+#return Rcpp::List::create (Rcpp::Named("inverted")=vinv);
+# ')
+ 
+ 
+
+
 GetVModified <- function(x, phy, flow, actual.params) {
 	bt <- 1
 	vh <- 0
