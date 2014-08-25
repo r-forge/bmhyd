@@ -18,16 +18,48 @@ continuous trait data containing species information in vector format (see Detai
 a rooted phylogenetic tree in Newick format (see Details).
 }
   \item{flow}{
-  a data frame for parental information of the hybrids 
+  a data frame for parental information of the hybrids. 
+  }
+  \item{opt.method}{
+  an optimization method. see function \link[stats]{optim}.
+  }
+  \item{models}{
+  option for choosing the desired models for data analysis. 1:fixed \eqn{\beta} at 1 but allow \eqn{v_H} to vary; 2: allow \eqn{\beta} to vary but fix \eqn{v_H} at 0 ;   
+  3: fix \eqn{\beta=1, v_H  
+  =0} ; 4:allow both to vary.   
+  }
+  \item{verbose}{
+  a TRUE/FALSE value. If TRUE, the search of the maximim likelihood has been found a 
+  new improvement. 
+  }
+  \item{get.se}{
+  a TRUE/FALSE value. If TRUE, the model will take the measurement error into account. Currently the error is set equally across all species.
+  }
+  \item{plot.se}{
+  a TRUE/FALSE value. IF TRUE, the standard errors from adaptive sampling will be returned. 
+  }
+  \item{store.sims}{
+  a TRUE/FALSE value.
+  }
+  \item{precision}{
+  a postive number: the cutoff at which we think the estimates become unreliable due to ill conditioned matrix. The default value is 2.
+  }
+  \item{auto.adjust}{
+  a TRUE/FALSE value. 
+  }
+  \item{likelihood.precision}{
+  a precision value for verifying the convergence for searching the likelihood. The default value is 0.001. 
+  }
+  \item{allow.extrapolation}{
+  a TRUE/FALSE value. see details. 
   }
 }
 \details{Function BMhyd fits likelihood models for continuous characters through incorporating phylogenetic network and comparative data. 
 The full likelihood model includes four parameters: the ancenstral state \eqn{\mu}, the overall variation \eqn{\sigma^2}, 
 the hybrid vigor \eqn{\beta}, and hybrid burst variation at formation \eqn{v_H}. We use four submodels that allows some fixed values of parameters 
-and treat others as free parameters: (1) \eqn{\beta=1, v_H=0}; (2) \eqn{\beta} is free parameter, \eqn{v_H=0};   
-(3) \eqn{\beta=1, v_H} is free parameter (4)\eqn{\beta} and \eqn{v_H} are free parameters. 
+and treat others as free parameters: (1) \eqn{\beta} is free parameter, \eqn{v_H=0};   (2)  \eqn{\beta=1, v_H} is free parameter (3)\eqn{\beta=1, v_H=0};   (4)\eqn{\beta} and \eqn{v_H} are free parameters. 
 
-BMhyd fits the model through maximum likelihood technique. It returns MLEs and standard errors for above four models. The standard errors from adaptive sampling could be be optionally returned upon users request.  
+BMhyd fits the model through maximum likelihood technique. It returns MLEs and standard errors for above four models. The standard errors from adaptive sampling could be be optionally returned upon user's request.  
 
 As input, \pkg{BMhyd} requires (a) a phylogenetic tree with known topology and branch length and (b) a set of comparative data (c) a flow data that includes taxon names, proportion (m) inherited from the parents, and hybridization time (gene flow time). 
 
