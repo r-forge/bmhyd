@@ -18,7 +18,7 @@ continuous trait data containing species information in vector format (see Detai
 a rooted phylogenetic tree in Newick format (see Details).
 }
   \item{flow}{
-  a data frame for parental information of the hybrids. 
+  a data frame for parental information of the hybrids.(see Details)  
   }
   \item{opt.method}{
   an optimization method. see function \link[stats]{optim}.
@@ -61,7 +61,16 @@ and treat others as free parameters: (1) \eqn{\beta} is free parameter, \eqn{v_H
 
 BMhyd fits the model through maximum likelihood technique. It returns MLEs and standard errors for above four models. The standard errors from adaptive sampling could be be optionally returned upon user's request.  
 
-As input, \pkg{BMhyd} requires (a) a phylogenetic tree with known topology and branch length and (b) a set of comparative data (c) a flow data that includes taxon names, proportion (m) inherited from the parents, and hybridization time (gene flow time). 
+As input, \pkg{BMhyd} requires (a) a phylogenetic tree of \link[ape] phylo object. The topology and branch lengths are known and (b) a set of comparative data in vector format with names matching txon names (c) a flow data of data frame type with five columns: (c.1) donor = the taxon that is the gene flow source; (c.2) recipient= the taxon that is the gene flow recipient; (c.3) m= the fraction of the recipient trait that comes from the source. In the case of an euqal hybridization between the recipient's sister on the tree and the donor, this is 0.5. In other cases where only, say, 10 percent of the recipient's quantitative trait loci come from the donor, it would be 0.1; (c.4) time.from.root.donor=the time, counting forward from the root, when the gene flow happened from the donor. It may not be the same as time.from.root.recipient, as it may have sepnt time in a now extinct ghost lineage first(though time.from.root.donor is less and equal to time.from.root.recipient). It is treated as a one time event, which makes sense in the case of a single allopoluploid specuation event, probably less in the case of ongoing gene flow; (c.5) time.from.root.recipient=the time, counting forward from the root, when the gene flow happened from the donor. 
+
+If the gene flow happedned to or from a lineage with multiple descedant species, use one row. For example, if lineage (A,B) has 20 percent of their genes coming in from lineage (C,D,E) at 14.5 MY since the root (not back in time), you would have a flow data.frame of
+
+\tabular{rlll}{
+	[,1] \tab donor \tab recipient \tab m \tab time.from.root.donor \tab time.from.root.recipient \cr
+	[,2] \tab C,D,E \tab A \tab 0.2 \tab 14.5 \tab 14.5 \cr
+	[,3] \tab C,D,E \tab A \tab 0.2 \tab 14.5 \tab 14.5 
+	}
+
 
 The variance covariance matrices can be poorly conditioned, making them hard to deal with numerically. If this is detected, we have an error checking and an approximation approach built in.
 In each case, we convert the matrix to a weighted sum of matrices: the original one and the diagonals of the original one, which has the effect of decreasing the magnitude of the off-diagonal elements
