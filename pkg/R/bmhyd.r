@@ -232,17 +232,6 @@ AdjustForDet <- function(phy, max.attempts=100) {
 	return(phy)
 }
 
-
-#fast.inverse.armadillo <- cxxfunction ( signature ( vs ="numeric") ,
-#plugin ="RcppArmadillo", body = '
-#arma::mat v = Rcpp::as<arma::mat>(vs);
-#arma::mat vinv = arma::pinv(v) ;
-#return Rcpp::List::create (Rcpp::Named("inverted")=vinv);
-# ')
- 
- 
-
-
 GetVModified <- function(x, phy, flow, actual.params) {
 	bt <- 1
 	vh <- 0
@@ -374,15 +363,11 @@ CalculateLikelihood <- function(x, data, phy, flow, actual.params, precision=2, 
 			local.lnl <- (Ntip(phy)/2)*log(2*pi)+(1/2)*t(data-means.modified)%*%pseudoinverse(V.modified.by.proportions)%*%(data-means.modified) + (1/2)*log(abs(det(V.modified.by.proportions))) 
 			if(i>6) {
 				very.local.lnl <- lnl.vector[(i-6):(i-1)]
-				max.diff <- NA
-				try(max.diff <- max(abs(very.local.lnl[-1] - very.local.lnl[-length(very.local.lnl)]))) #looking locally for jumps in the likelihood)
-				current.diff <- NA
-				try(current.diff <- abs(local.lnl - lnl.vector[i-1]))
-				if(!is.na(max.diff) && !is.na(current.diff)) {
-					if(current.diff > 2 * max.diff) {
-						#print(paste("breaking after ", i))
-						break() #the modified matrix is still poorly conditioned, so stop here	
-					}
+				max.diff <- max(abs(very.local.lnl[-1] - very.local.lnl[-length(very.local.lnl)])) #looking locally for jumps in the likelihood
+				current.diff <- abs(local.lnl - lnl.vector[i-1])
+				if(current.diff > 2 * max.diff) {
+					#print(paste("breaking after ", i))
+					break() #the modified matrix is still poorly conditioned, so stop here	
 				}	
 			}
 			lnl.vector[i] <- local.lnl
@@ -597,7 +582,7 @@ PlotNetwork <- function(phy, flow, col.non="black", col.hybrid="red") {
 			label.colors[i]<-col.hybrid	
 		}
 	}
-	text(x=rep(max(xxyy$xx), Ntip(phy)), y=xxyy$yy[which(phylobase::edges(phy4)[xxyy$eorder,2] %in% sequence(Ntip(phy)))], names(getNode(phy4, xxyy$torder)), col=label.colors, pos=4)
+	text(x=rep(max(xxyy$xx), Ntip(phy)), y=xxyy$yy[which(phylobase:::edges(phy4)[xxyy$eorder,2] %in% sequence(Ntip(phy)))], names(getNode(phy4, xxyy$torder)), col=label.colors, pos=4)
 	for (i in sequence(dim(flow)[1])) {
 		recipient.node <- getNode(phy4, flow$recipient[i])
 		recipient.path <- c(recipient.node, ancestors(phy4, recipient.node))
@@ -607,13 +592,13 @@ PlotNetwork <- function(phy, flow, col.non="black", col.hybrid="red") {
 		if(length(recipient.path)>1 && length(which(recipient.path.heights==flow$time.from.root.recipient[i]))>0) { #the latter condition means we're moving to an existing node
 				recipient <- valid.recipients[length(valid.recipients)-1]
 		}
-		y1 <- xxyy$yy[which(phylobase::edges(phy4)[xxyy$eorder,2] == recipient)]
+		y1 <- xxyy$yy[which(phylobase:::edges(phy4)[xxyy$eorder,2] == recipient)]
 		donor.node <- getNode(phy4, flow$donor[i])
 		donor.path <- c(donor.node, ancestors(phy4, donor.node))
 		donor.path.heights <- nodeDepth(phy4, donor.path)
 		valid.donors <- donor.path[which(donor.path.heights > flow$time.from.root.donor[i])]
 		donor <- valid.donors[length(valid.donors)] #do it from the earliest qualifying tipward node
-		y0 <- xxyy$yy[which(phylobase::edges(phy4)[xxyy$eorder,2] == donor)]
+		y0 <- xxyy$yy[which(phylobase:::edges(phy4)[xxyy$eorder,2] == donor)]
 		arrows(x0=flow$time.from.root.donor[i]/max(branching.times(phy)), x1=flow$time.from.root.recipient[i]/max(branching.times(phy)), y1=y1, y0=y0, col="red") #rescale since it goes from zero to 1 in height
 		#grid.arrows(x=c(flow$time.from.root[i],flow$time.from.root[i]), y=c(y0, y1))
 	}
