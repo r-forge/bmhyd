@@ -59,7 +59,7 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 		stop("Min value of flow is too low; should be between zero and one")	
 	}
 	if(max(flow$m)>1) {
-		stop("Min value of flow is too high; should be between zero and one")	
+		stop("Max value of flow is too high; should be between zero and one")	
 	}
 	results<-list()
 	#hessians <- list()
@@ -155,13 +155,13 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 
 		if(get.se) {
 			if(verbose) {
-				print("Now doing simulation to estimate SE")	
+				print("Now doing simulation to estimate parameter uncertainty")	
 			}
 			interval.results <- AdaptiveConfidenceIntervalSampling(best.run$par, fn=CalculateLikelihood, lower=c(0, -Inf, 0, 0, 0)[which(free.parameters)], data=data, phy=phy, flow=flow, actual.params=free.parameters[which(free.parameters)], allow.extrapolation=allow.extrapolation)
 			interval.results.in <- interval.results[which(interval.results[,1]-min(interval.results[,1])<=2),]
 			interval.results.out <- interval.results[which(interval.results[,1]-min(interval.results[,1])>2),]
 			if(plot.se) {
-				pdf(file=paste("Model",models[model.index], "_SE_plot.pdf", sep=""), height=5, width=5*sum(free.parameters))
+				pdf(file=paste("Model",models[model.index], "_uncertainty_plot.pdf", sep=""), height=5, width=5*sum(free.parameters))
 				par(mfcol=c(1, sum(free.parameters)))
 				for(parameter in sequence(sum(free.parameters))) {
 					plot(x=interval.results[,parameter+1], y=interval.results[,1], type="n", xlab=names(free.parameters[which(free.parameters)])[parameter], ylab="NegLnL", bty="n", ylim=c(min(interval.results[,1]), min(interval.results[,1])+10))
@@ -171,7 +171,7 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 				}
 				dev.off()
 				if(verbose) {
-					print(paste("SE plot has been saved in Model",models[model.index], "_SE_plot.pdf in ", getwd(), sep=""))
+					print(paste("Uncertainty plot has been saved in Model",models[model.index], "_uncertainty_plot.pdf in ", getwd(), sep=""))
 				}
 			}
 			if(store.sims) {
