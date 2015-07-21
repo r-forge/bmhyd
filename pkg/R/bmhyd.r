@@ -167,7 +167,7 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 					plot(x=interval.results[,parameter+1], y=interval.results[,1], type="n", xlab=names(free.parameters[which(free.parameters)])[parameter], ylab="NegLnL", bty="n", ylim=c(min(interval.results[,1]), min(interval.results[,1])+10))
 					points(x=interval.results.in[,parameter+1], y=interval.results.in[,1], pch=16, col="black")
 					points(x=interval.results.out[,parameter+1], y=interval.results.out[,1], pch=16, col="gray")
-					#points(x= best.run$par[parameter], y= best.run$value, pch=1, col="red", cex=1.5)
+					points(x= best.run$par[parameter], y= best.run$value, pch=1, col="red", cex=1.5)
 				}
 				dev.off()
 				if(verbose) {
@@ -567,22 +567,26 @@ SimulateNetwork <- function(ntax.nonhybrid=100, ntax.hybrid=10, flow.proportion=
 	return(list(phy=phy, flow=flow))
 }
 
-PlotNetwork <- function(phy, flow, col.non="black", col.hybrid="red") {
+PlotNetwork <- function(phy, flow, col.non="black", col.hybrid="red", col.donor="blue", name.padding=1.5, cex=1, xlab="", bty="n", head.length=0.2, edge.width=2, col.tree="darkgray", col.arrow="red", arrow.width=1, ...) {
 	library(phylobase)
 	phy<-reorder(phy, "pruningwise")
 	phy4 <- as(phy, "phylo4")
 	xxyy <- phyloXXYY(phy4)
 	#plot(phy4)
-	plot(x=c(min(xxyy$xx), 1.1*max(xxyy$xx)), y=range(xxyy$yy), type="n", xaxt="n", xlab="", yaxt="n", ylab="", bty="n")
-	arrows(x0=xxyy$segs$v0x, x1=xxyy$segs$v1x, y0=xxyy$segs$v0y, y1=xxyy$segs$v1y, length=0)
-	arrows(x0=xxyy$segs$h0x, x1=xxyy$segs$h1x, y0=xxyy$segs$h0y, y1=xxyy$segs$h1y, length=0)
+	plot(x=c(min(xxyy$xx), name.padding*max(xxyy$xx)), y=range(xxyy$yy), type="n", xaxt="n", xlab=xlab, yaxt="n", ylab="", bty=bty, ...)
+	arrows(x0=xxyy$segs$v0x, x1=xxyy$segs$v1x, y0=xxyy$segs$v0y, y1=xxyy$segs$v1y, length=0, lwd=edge.width, col=col.tree)
+	arrows(x0=xxyy$segs$h0x, x1=xxyy$segs$h1x, y0=xxyy$segs$h0y, y1=xxyy$segs$h1y, length=0, lwd=edge.width, col=col.tree)
 	label.colors <- rep(col.non, Ntip(phy))
 	for (i in sequence(Ntip(phy))) {
+		if	(names(getNode(phy4, xxyy$torder))[i] %in% flow$donor) {
+			label.colors[i]<-col.donor	
+		}
 		if	(names(getNode(phy4, xxyy$torder))[i] %in% flow$recipient) {
 			label.colors[i]<-col.hybrid	
 		}
+
 	}
-	text(x=rep(max(xxyy$xx), Ntip(phy)), y=xxyy$yy[which(phylobase:::edges(phy4)[xxyy$eorder,2] %in% sequence(Ntip(phy)))], names(getNode(phy4, xxyy$torder)), col=label.colors, pos=4)
+	text(x=rep(max(xxyy$xx), Ntip(phy)), y=xxyy$yy[which(phylobase:::edges(phy4)[xxyy$eorder,2] %in% sequence(Ntip(phy)))], names(getNode(phy4, xxyy$torder)), col=label.colors, pos=4, cex=cex)
 	for (i in sequence(dim(flow)[1])) {
 		recipient.node <- getNode(phy4, flow$recipient[i])
 		recipient.path <- c(recipient.node, ancestors(phy4, recipient.node))
@@ -599,7 +603,7 @@ PlotNetwork <- function(phy, flow, col.non="black", col.hybrid="red") {
 		valid.donors <- donor.path[which(donor.path.heights > flow$time.from.root.donor[i])]
 		donor <- valid.donors[length(valid.donors)] #do it from the earliest qualifying tipward node
 		y0 <- xxyy$yy[which(phylobase:::edges(phy4)[xxyy$eorder,2] == donor)]
-		arrows(x0=flow$time.from.root.donor[i]/max(branching.times(phy)), x1=flow$time.from.root.recipient[i]/max(branching.times(phy)), y1=y1, y0=y0, col="red") #rescale since it goes from zero to 1 in height
+		arrows(x0=flow$time.from.root.donor[i]/max(branching.times(phy)), x1=flow$time.from.root.recipient[i]/max(branching.times(phy)), y1=y1, y0=y0, col=col.arrow, lwd=arrow.width, length=head.length) #rescale since it goes from zero to 1 in height
 		#grid.arrows(x=c(flow$time.from.root[i],flow$time.from.root[i]), y=c(y0, y1))
 	}
 }
@@ -688,4 +692,12 @@ SimulateTipData <- function(phy, flow, params, suffix="_DUPLICATE") {
 	}
 	tips<-tips[!grepl(suffix, names(tips))]
 	return(tips)
+}
+
+ContourFromAdaptiveSampling<-function(params.of.interest, results) {
+	for (param.1 in sequence(length(params.of.interest)-1)) {
+		for	(param.2 in c((param.1+1) : length(params.of.interest))) {
+				
+		}
+	}	
 }
