@@ -175,7 +175,8 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 				}
 			}
 			if(store.sims) {
-				all.sims<-append(all.sims, interval.results)
+				colnames(interval.results) <- c("neglnL", names(free.parameters)[which(free.parameters)])
+				all.sims[[model.index]]<-interval.results
 			}
 			free.index=0
 			for(parameter in sequence(5)) {
@@ -694,10 +695,44 @@ SimulateTipData <- function(phy, flow, params, suffix="_DUPLICATE") {
 	return(tips)
 }
 
-ContourFromAdaptiveSampling<-function(params.of.interest, results) {
+#The following short function comes from Ken Takagi at  https://chitchatr.wordpress.com/2011/12/30/convex-hull-around-scatter-plot-in-r/ 
+Plot_ConvexHull<-function(xcoord, ycoord, lcolor){
+  hpts <- chull(x = xcoord, y = ycoord)
+  hpts <- c(hpts, hpts[1])
+  lines(xcoord[hpts], ycoord[hpts], col = lcolor)
+}  
+
+ContourFromAdaptiveSampling<-function(sims, params.of.interest=NULL) {
+	#sims is a data.frame with the sim results
+	if(is.null(params.of.interest)) {
+		params.of.interest <- colnames(sims)[-1]	
+	}
+	sims$neglnL <- sims$neglnL - min(sims$neglnL)
 	for (param.1 in sequence(length(params.of.interest)-1)) {
 		for	(param.2 in c((param.1+1) : length(params.of.interest))) {
-				
+			sims.sub <- sims[,c(params.of.interest[param.1], params.of.interest[param.2], 'neglnL')]
+			# points.to.fit <- data.frame()
+			x.range <- range(sims.sub[,1])
+			y.range <- range(sims.sub[,2])
+			x.grid <- quantile(sims.sub[,1], seq(from=0, to=1, length.out = floor(length(sims.sub[,1])/50)))
+			y.grid <- quantile(sims.sub[,2], seq(from=0, to=1, length.out = floor(length(sims.sub[,2])/50)))
+			colnames(sims.sub)[1:2] <- c("x", "y")
+			# for (x.index in sequence(length(x.grid)-1)) {
+				# for (y.index in sequence(length(y.grid)-1)) {
+					# relevant.points <- subset(sims.sub, x>=x.grid[x.index] & x<x.grid[x.index+1] & y>=y.grid[y.index] & y<y.grid[y.index+1])
+					# points.to.fit <- rbind(points.to.fit, relevant.points[which.max(relevant.points[,3]),])
+				# }
+			# }
+			plot(x=x.range, y=y.range, xlab=params.of.interest[param.1], ylab=params.of.interest[param.2], type="n", bty="n")
+			relevant.point.id <- chull(sims.sub[which(sims.sub[,3]<2),1], sims.sub[which(sims.sub[,3]<2),2])
+			#polygon(sims.sub[relevant.point.id,1], sims.sub[relevant.point.id, 2], col="gray", border=NA, fillOddEven=TRUE)
+			#polygon(sims.sub[relevant.point.id,1], sims.sub[relevant.point.id, 2], col="gray", border=NA, fillOddEven=FALSE)
+			Plot_ConvexHull(sims.sub[which(sims.sub[,3]<2),1], sims.sub[which(sims.sub[,3]<2),2], "black")
+			Plot_ConvexHull(sims.sub[which(sims.sub[,3]<5),1], sims.sub[which(sims.sub[,3]<5),2], "black")
+
+			#points(sims.sub[which(sims.sub[,3]<2),1], sims.sub[which(sims.sub[,3]<2),2], col="green", pch="X")
+						#contour(interp(points.to.fit[,1], points.to.fit[,2], points.to.fit[,3]), xlab=params.of.interest[param.1], ylab=params.of.interest[param.2], levels=c(1, 2, 5, 10))
+			points(sims.sub[which.min(sims.sub$neglnL),1], sims.sub[which.min(sims.sub$neglnL),2], col="red", pch=20)
 		}
 	}	
 }
