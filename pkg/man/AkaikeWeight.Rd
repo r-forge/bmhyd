@@ -1,41 +1,43 @@
 \name{AkaikeWeight}
 \alias{BMhyd}
 \title{
-Akaike weight 
-}
+	Akaike weight 
+	}
+
 \description{
-Calculate Akaike weight 
-}
+	Calculate Akaike weight for the models 
+	}
 
 \usage{
-AkaikeWeight(Delta.AICc.Array)
-}
+	AkaikeWeight(Delta.AICc.Array)
+	}
+
 \arguments{
   \item{Delta.AICc.Array}{
-The delta AICc value which is defined as the difference between the AICc value and the minimum AICc value among a candidate model. 
- }
-}
+	Delta.AICc.Array is defined as the difference between the AICc value and the minimum AICc value among candidate models. 
+ 	}
+	}
 
 \details{	
-For n models of interest, the Akaikei weight for the i th model is defined as \eqn{w = exp(-0.5* dAICc_i)/ sum_i dAICc_i  } where dAICc_i is the delta AICc value for the ith model. 
-} 
+	For \eqn{n} models of interest, the Akaikei weight for the \eqn{i} th model is defined as \eqn{w = exp(-0.5* dAICc_i)/ sum_i dAICc_i  } where dAICc_i is the delta AICc value for the \eqn{i} th model. 
+	} 
 
 \value{
- \item{w}{Akaike weight}
- }
+ 	Akaike weights that appear in vector format.
+ 	}
 
 \author{
-Brian O'Meara <omeara.brian@gmail.com>
-}
+	Dwueng-Chwuan Jhwueng <dcjhwueng@fcu.edu.tw>
+	}
 
 \references{ 
 	Burham, K.P., Anderson, D.R. (2002) Model selection and multimodel inference: a practical information-theoretic approach. Second edition. Springer. New York.
 	}
 \examples{
-#simulate 4 AICc values for 4 models, respecitvely
-AICc_array<-rnorm(4, mean=10,sd=1)
-#calculate the delta AICc
-Delta.AICc.array<-AICc_array-min(AICc_array)
-#calculate the Akaike weight
-AkaikeWeight(Delta.AICc.Array)
-}
+	#simulate 4 AICc values for 4 models, respecitvely
+	AICc_Array<-rnorm(4, mean=10,sd=1)
+	#calculate the delta AICc
+	Delta.AICc.Array<-AICc_Array-min(AICc_Array)
+	#calculate the Akaike weight
+	AkaikeWeight(Delta.AICc.Array)
+	}

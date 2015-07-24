@@ -1,72 +1,58 @@
 \name{BMhyd}
 \alias{BMhyd}
 \title{
-Comparative method for hybridzation
-}
+	Comparative Method for Studying Hybridzation Under Brownian Motion
+	}
+
 \description{
-Fit Brownian motion model of continuous character to investigate hybrid species through the  hybrid vigor, 
-heritability factor, and hybrid variation. 
-}
+	Fit Brownian motion model of continuous character to investigate hybrid species through the hybrid vigor,  
+	, and the variation at the burst of hybridization. Measurement error is also considered. as well as the parameter in the Brownian 	motion model. 
+	}
 
 \usage{
-BMhyd(data, network)
-}
+	BMhyd(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), verbose=TRUE, get.se=TRUE, plot.se=TRUE, store.sims=FALSE, 		precision=2, auto.adjust=FALSE, likelihood.precision=0.001, allow.extrapolation=FALSE)
+	}
+
 \arguments{
-  \item{data}{
-continuous trait data containing species information in vector format (see Details).
-}
-  \item{network}{
-a rooted phylogenetic network input in eNewick format (see Details).
-}
-}
-\details{Function BMhyd fits likelihood models for continuous characters through incorporating phylogenetic network and comparative data. 
-The full likelihood model includes five parameters: the ancenstral state \eqn{\mu}, the overall variation \eqn{\sigma^2}, 
-the hybrid vigor \eqn{\beta}, proportion of heritability \eqn{0\leq h \leq 1}, and hybrid burst variation at formation \eqn{v_H}. 
-Current version fixes heritability parameter, \eqn{h}, to 0.5. We use four submodels that allows some fixed values of parameters 
-and treat others as free parameters: (1) \eqn{\beta=1, v_H=0}; (2) \eqn{\beta} is free parameter, \eqn{v_H=0};   
-(3) \eqn{\beta=1, v_H} is free paramter (4)\eqn{\beta} and \eqn{v_H} are free parameters. 
+  \item{data}{continuous trait data containing species information in vector format}
+  \item{phy}{a phylo tree}
+  \item{flow}{a struture of gene flow} 
+  \item{opt.method}{the method for used for optimization. The default is Nelder-Mead}
+  \item{models}{the model used for analysis(see details)}
+  \item{verbose}{a TRUE/FALSE argument to start optimization}
+  \item{get.se}{a TRUE/FALSE argument estimation for doing simulation to estimate parameter uncertainty(see details)}
+  \item{plot.se}{a TRUE/FALSE argument for output the uncertainty plot for the model(see details)}
+  \item{store.sims}{a TRUE/FALSE argument to record the the parameter estimates and relevant values.}
+  \item{precision}{a numeric value to present the cutoff at which the user think the estimates become unreliable due to ill conditioned matrix.}
+  \item{auto.adjust}{a TRUE/FALSE argument to adjust the the phylogeny }
+  \item{likelihood.precision}{a numerical value used for verifying the convergent of the estimation.}
+  \item{allow.extrapolation}{a TRUE/FALSE argument. If TRUE, the VCV matrix was ill-conditioned, so used splines to estimate its likelihood.}
+	}
 
-BMhyd fits the model through maximum likelihood technique. It returns MLEs and their approximated standard errors for above four models. 
-Model averaged parameter estimates and model averaged parameter standard errors for the four models are reported. 
-
-As input, \pkg{BMhyd} requires (a) a network N with known topology and branch length and (b) a set of comparative data. 
-The network must be entered in \emph{eNewick format} (Cardona et al. 2008). 
-The comparative data format is set to the \eqn{n} by \eqn{1} vector that contains the continuous trait of \eqn{n} species of interest.  
-
-} 
+\details{Function BMhyd fits likelihood models for continuous characters. It incorporates phylogenetic tree, structure of gene flow 	and comparative data. The full likelihood model includes several parameters: the ancenstral state \eqn{\mu}, the overall variation 	\eqn{\sigma^2}, the hybrid vigor \eqn{\beta}, the hybrid burst variation at formation \eqn{v_H} and the measurement error SE. The 	struture of gene flow is a five column table where the first and the second column contain the donor and recipient information. 	The thrid column is the information about the heritibaility factor m which is a fraction of the recipient trait that comes from 	the source. The fourth column, recipient time, records time from the root of the recipient that counting forward from the root 		when the gene flow happened from the donor. The fifth column, recipient time, records time from the root of the recipient that 		counting forward from the root when the gene flow happened from the donor. For detail modeling procedure, see the manuscript in 	references. We allows some fixed values of parameters and treat others as free parameters: model 1 fixes \eqn{\beta} at 1 but 		allow \eqn{v_H} to vary; model 2 allows \eqn{\beta} to vary but fixes \eqn{v_H} at 0; model 3 fixes \eqn{\beta} at 1 and \eqn{v_H} 	at 0; and model 4 allows both to vary.  BMhyd fits the model through maximum likelihood technique, it returns MLEs. When setting 	the get.se to TRUE, the BMhyd will do simulation to estimate parameter uncertainty and the confidence intervals by adaptive 		confidence interval sampling method(see manuscript in Jhwueng and O'Meara). It setting plot.se to be TRUE, BMhyd will be saved the 	CI in PDF file once the simulations are finished.  Model averaged parameter estimates are calculated by the Akaike weight. As an 	input, \pkg{BMhyd} requires a phylogenetic tree of the phylo class, a structure of gene flow and a comparative data. Currently the 	method is develop for univariate analysis where the comparative data includes a single trait for analyses. 
+ 	} 
 
 \value{
- \item{param.est}{an array that contains the maximum likelihood estimates.}
- \item{param.se}{The approximated standard error for the MLE estimates.}
- \item{loglik}{the maximum log-likelihood.}
- \item{AICc}{Akaike information criterion with sample size correction.}
- \item{Akaike.weight}{The Akaike weight \eqn{\exp(- \Delta AICc/2)}.}
- \item{wgt.param.est.se}{The weighted parameters and standard errors calculated through four models.}
- \item{convergence}{An integer code. 0 indicates successful completion. see optim}
- }
+	A summaried table including the models, number of parameter, parameter estimates, likelihood value, upper bound and lower bound of 	the parameter, Akaike weight. 
+ 	}
 
 \author{
-Dwueng-Chwuan Jhwueng <djhwueng@umail.iu.edu>
-}
+	Brian O'Meara <omeara.brian@gmail.com>, Dwueng-Chwuan Jhwueng <tony.jhwueng@gmail.com>
+	}
 
 \references{
-Jhwueng D.C. and O'Meara B.C. 2014. \emph{Studying trait evolution in hybrid species on phylogenetic networks}. Submitted. 
+	Jhwueng D.C. and O'Meara B.C. 2015. \emph{Studying trait evolution in hybrid species on phylogenetic networks}. Submitted. 
 
-Cardona, G., F. Rossello, and G. Valiente. 2008. \emph{Extended Newick: it is time for a standard representation of phylogenetic networks}. BMC Bioinformatics 9:532.
-
-Burnham, K.P., and D.R. Anderson. 2004. \emph{Model selection and inference: a practical information-theoretic approach}. Sec. Ed. Springer, New York.
-
-Gilbert, P.  2011. numDeriv: Accurate Numerical Derivatives. R package version 
-2010.11-1. http://CRAN.R-project.org/package=numDeriv
-
-Nash, J.C. and R. Varadhan (2011). Unifying Optimization Algorithms to Aid Software System Users: optimx for R. Journal of Statistical Software, 43(9), 1-14. URL http://www.jstatsoft.org/v43/i09/.
-}
+	Burnham, K.P., and D.R. Anderson. 2004. \emph{Model selection and inference: a practical information-theoretic approach}. Sec. Ed. 	Springer, New York.
+	}
+	
 \examples{
-## A 5 taxon phylogenetic network in eNewick format. It has four normal species and
-#  one hybrid (species 2).
-network<-c("(((1:0.5,(2:0.5)7:0)6:0.1,(7:0,3:0.5)8:0.1)10:0.4,(4:0.3,5:0.3)9:0.7)11:0;")
-## Comparative data
-data<-matrix(c( 1.2, 3.5, 1.6, 2.7, 4.3  ),ncol=1)
-BMhyd(data,network)
+	#library(BMhyd)
+	ntax.nonhybrid<-4
+	ntax.hybrid<-1
+	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid, flow.proportion=0.5, origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=FALSE)
 
-}
+	tips<-rnorm(ntax.nonhybrid+ntax.hybrid)
+	names(tips)<-paste("t",(1:(ntax.nonhybrid+ntax.hybrid)),sep="")
+	BMhyd(tips,network$phy,network$flow, opt.method="Nelder-Mead", models=3, verbose=TRUE, get.se=FALSE, plot.se=FALSE, store.sims=FALSE, precision=2, auto.adjust=FALSE, likelihood.precision=0.001, allow.extrapolation=FALSE)  # use the model 3.
+	}
