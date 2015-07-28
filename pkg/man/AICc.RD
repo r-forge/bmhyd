@@ -5,7 +5,7 @@
 	}
 
 \description{
-	Calculates the second order Akaike's information criterion 
+	Calculates the second order Akaike's information criterion score for models of interest. 
 	}
 
 \usage{
@@ -14,13 +14,13 @@
 
 \arguments{
   \item{n}{
-		number of taxa
+		number of taxa for the given phylogenetic tree. It represents the sample size(the number of species on the tip of phylogeny).
 	}
   \item{k}{
-	number of parameters in the model
+	number of free parameters in the model 
 	}
   \item{LogLik}{
-   negative log likelihood value  	
+   the minimum of the negative log-likelihood value obtained by optitimizing the likelihood function.   	
 	}
 	}
 
@@ -33,15 +33,20 @@
  	}
 
 \author{
-	Brian O'Meara <omeara.brian@gmail.com>, Dwueng-Chwuan Jhwueng <dcjhwueng@fcu.edu.tw>
+	Dwueng-Chwuan Jhwueng
 	}
 
 \references{
 	Burnham, K.P., and D.R. Anderson. 2004. \emph{Model selection and inference: a practical information-theoretic approach}. Sec. Ed. Springer, New York.
 	}
 \examples{
+    #assign the size 
 	n<-5
+	#assign the number of parameter
 	k<-3
+	#assign the negative log likelihood value.
 	LogLik<- -2
+	#compute the AICc score
 	AICc(n,k,LogLik)
+	# result AICc value of 26.
 	}

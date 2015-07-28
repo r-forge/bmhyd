@@ -1,11 +1,11 @@
 \name{GetAncestor}
 \alias{BMhyd}
 \title{
-	Ancestor identification
+	Identify the ancestor 
 	}
 
 \description{
-	Identify the ancestor node for the given descedent note.
+	Given the descedent node for the tree, the function will return its ancestor node. 
 	}
 
 \usage{
@@ -13,20 +13,16 @@
 	}
 
 \arguments{
-  \item{phy}{an object of class 'phylo'}
-  \item{node}{descedant node}
+  \item{phy}{an object of class 'phylo'.}
+  \item{node}{descedant node.}
 	}
-
-\details{
-	Given the descedent node for the tree, the function will return its ancestor. 
-	} 
 
 \value{
 	the ancestor node 
  	}
 
 \author{
-	Brian O'Meara <omeara.brian@gmail.com>, Dwueng-Chwuan Jhwueng <tony.jhwueng@gmail.com>
+	Brian O'Meara
 	}
 
 \references{
@@ -35,8 +31,12 @@
 
 \examples{
 	library(ape)
+	#simulate a tree of 3 taxa
  	phy<-rtree(3)
- 	plot(phy) # plot the tree
+ 	#plot the tree
+ 	plot(phy) 
+ 	#descedant node
  	node<-1
+ 	#get the ancestor node, it will return 5.
  	GetAncestor(phy,node) 
  	}

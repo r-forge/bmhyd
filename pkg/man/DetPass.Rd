@@ -1,11 +1,11 @@
 \name{DetPass}
 \alias{BMhyd}
 \title{
-	Verification of the determinant of the matrix 
+	determinant of the matrix 
 	}
 	
 \description{
-	Calculate the determinant of the matrix(see details).
+	Calculate the determinant of the matrix and check whether it is positive.
 	}
 
 \usage{
@@ -19,15 +19,15 @@
 }
 
 \details{
-	The DetPass functon first calculates variance covariance matrix C for the tree. It then calculates the determinant of the C, 0.0001*C, and 1000*C and verifies whether all the three determinant are positive and finite. If yes, the C matrix is likely to be the well-conditioned.  
+	This functon first calculates variance covariance matrix C for the tree. It then calculates the determinant of the C, 0.0001*C, and 1000*C and verifies whether all the three determinants are positive and finite. If yes, a TRUE value is return and the C matrix is good for further use.  
 	}
 
 \value{
- a TRUE/FALSE value for determining whether the matrix is likely to be well-conditioned. 
+ a TRUE/FALSE value. 
  }
 
 \author{
-	Brian O'Meara <omeara.brian@gmail.com>
+	Brian O'Meara
 	}
 
 \references{
@@ -38,5 +38,6 @@
 	library(ape)
 	##simulate a tree of 5 taxa
 	phy<-rtree(5)
+	#check whether the determiant is positve
 	DetPass(phy)
 	}

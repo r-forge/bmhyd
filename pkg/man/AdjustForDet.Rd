@@ -4,7 +4,7 @@
  Adjust the phylogeny 
  
 \description{
-	Adjust the phylogeny when the determinant of the variance covariance matrix of the phylogeny is ill-conditioned. 
+	A function adjusts the phylogeny when the determinant of the variance covariance matrix of the the phylogeny is negative. 
 	}
 
 \usage{
@@ -22,14 +22,14 @@
 	}
 
 \details{
-	The AdjustForDet functon first calculate the determiant of the phylogeny using the DetPass function. If the determinant of the phylogeny is difficult to calculate, the function will adjust the phylogeny by slightly lengthening the edge lengths of the tree. This procedure repeats until a good adjusted phylogeny is returned.}
+	This functon first calculates the determiant of the phylogeny using the function \code{DetPass}. When the determinant of the variance covariance matrix for the phylogeny is negative, this function will adjust the phylogeny by slightly lengthening the edge lengths of the tree. This procedure repeats until a good adjusted phylogeny is returned.}
 
 \value{
  an object of class 'phylo'
  }
 
 \author{
-	Brian O'Meara <omeara.brian@gmail.com>,  Dwueng-Chwuan Jhwueng <tony.jhwueng@gmail.com>
+	Brian O'Meara
 	}
 
 \references{
@@ -38,6 +38,8 @@
 
 \examples{
 	library(ape)
+	#simulate a tree of 5 taxa
 	phy<-rtree(5)
+	#check and adjust the phylogeny
 	AdjustForDet(phy,max.attempts=100)
 	}

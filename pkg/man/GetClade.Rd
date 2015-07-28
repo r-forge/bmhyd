@@ -1,7 +1,7 @@
 \name{GetClade}
 \alias{BMhyd}
 \title{
-	Get clade
+	Get clade from the tree
 	}
 
 \description{
@@ -13,12 +13,12 @@
 	}
 
 \arguments{
-  \item{phy}{an object of class 'phylo'}
-  \item{clade.size}{size of the clade}
+  \item{phy}{an object of class 'phylo'.}
+  \item{clade.size}{size of the clade.}
 	}
 
 \details{
-	This function uses the 'phylo' class where the edges(ancestor-decedant relationship) of the tree are used to identify the interior node with desired number of descedent (clade.size) on the tips. It applies the findMRCA function in phytools to search the ancestor.   
+	This function uses the 'phylo' class where the edges(ancestor-decedant relationship) of the tree are used to identify the interior node with desired number of descedent (clade.size) on the tips. It applies the function \code{findMRCA} in \emph{phytools} to search the ancestor.   
 	} 
 
 \value{
@@ -26,7 +26,7 @@
  	}
 
 \author{
-	Brian O'Meara <omeara.brian@gmail.com>, Dwueng-Chwuan Jhwueng <tony.jhwueng@gmail.com>
+	Brian O'Meara
 	}
 
 \references{
@@ -36,8 +36,12 @@
 \examples{
 	library(ape)
 	library(phytools)
+	#simulate a tree 
  	phy<-rtree(3)
- 	plot(phy) # plot the tree
+ 	#plot the tree
+ 	plot(phy) 
+ 	#set up the clade size
  	clade.size<-2
- 	GetClade(phy,clade.size) 
+ 	#search the nodes that has desired clade size
+ 	GetClade(phy,clade.size) #node 5 will be return
  	}
