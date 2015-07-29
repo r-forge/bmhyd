@@ -4,7 +4,7 @@
 Lump into clade
 }
 \description{
-This function Lump the .....
+This function Lump the hybrid species into a clades
 }
 
 \usage{
@@ -15,14 +15,15 @@ LumpIntoClades(phy,flow)
    }
    
 \details{
- The function returns the donor clade, recipient clade, time from root donor, time from root recipient as a dataframe.   
+ The function summaries the flow structure into the clade where the donor clades contribute more than one recipient clades. 
     } 
 
 \value{
+	a flow table that contains the donor clade, recipient clade, proportion of the gene flow,time from root donor, and time from root recipient. 
  }
 
 \author{
-	Brian O'Meara <omeara.brian@gmail.com>, Dwueng-Chwuan Jhwueng <tony.jhwueng@gmail.com>
+	Brian O'Meara, Dwueng-Chwuan Jhwueng.
 	}
 
 \references{
@@ -30,8 +31,14 @@ LumpIntoClades(phy,flow)
 	}
 	
 \examples{
-	ntax.nonhybrid<-4
-	ntax.hybrid<-1
+	#set the number of non hybrid species
+	ntax.nonhybrid<-5
+	#set the number of hybrid species
+	ntax.hybrid<-2
+	#simulate a network
 	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid, flow.proportion=0.5, origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=FALSE)
+	#show the flow
+	network$flow	
+	#show the new flow table
 	LumpIntoClades(network$phy, network$flow) 
 	}

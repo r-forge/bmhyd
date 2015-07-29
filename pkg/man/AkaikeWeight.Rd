@@ -27,7 +27,7 @@
  	}
 
 \author{
-	Dwueng-Chwuan Jhwueng <dcjhwueng@fcu.edu.tw>
+	Dwueng-Chwuan Jhwueng
 	}
 
 \references{ 

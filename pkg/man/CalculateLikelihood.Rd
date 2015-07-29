@@ -32,7 +32,7 @@
 	 }
 
 \author{
-	Brian O'Meara
+	Brian O'Meara, Dwueng-Chwuan Jhwueng.
 	}
 
 \references{

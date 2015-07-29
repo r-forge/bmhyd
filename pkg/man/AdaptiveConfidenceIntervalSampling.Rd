@@ -29,7 +29,7 @@ This function starts with a given parameters values, then the points are generat
  }
 
 \author{
-	Brian O'Meara 
+	Brian O'Meara, Dwueng-Chwuan Jhwueng. 
 	}
 
 \references{

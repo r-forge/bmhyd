@@ -1,7 +1,6 @@
   \name{cichlid}
      \docType{data}
      \alias{cichlid}
-     \alias{network}
      \alias{data}
      \title{Cichlid data from Kobmuller et al. 2007}
      \description{
