@@ -25,7 +25,7 @@
 	}
 
 \details{
-	'AICc' is a function to compute the AICc values and is valid to select among different models. \ean{ AICc = 2*n*k/(n-k-1) -2 log L} where \eqn{L} is the maximum likelihood for the model.  
+	'AICc' is a function to compute the AICc values and is valid to select among different models. \eqn{AICc = 2*n*k/(n-k-1) -2 log L} where \eqn{L} is the maximum likelihood for the model.  
 	} 
 
 \value{

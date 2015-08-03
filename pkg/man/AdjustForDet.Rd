@@ -2,7 +2,7 @@
 \alias{BMhyd}
 \title{
  Adjust the phylogeny 
- 
+ }
 \description{
 	A function adjusts the phylogeny when the determinant of the variance covariance matrix of the the phylogeny is negative. 
 	}

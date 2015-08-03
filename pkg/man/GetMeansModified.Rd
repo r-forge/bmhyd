@@ -5,8 +5,8 @@
 	}
 	
 \description{
-	This function returns the species mean for the network model. For the non hybrid species, it returns as a parameter \eqn{\mu} and for hybrid species it returns \eqn{\mu+ \log \beta}.   
-
+	This function returns the species mean for the network model. For the non hybrid species, it returns as a parameter \eqn{\mu} and for hybrid species it returns 
+  \eqn{\mu+ \log \beta}.   
 	}
 
 \usage{
