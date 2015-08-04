@@ -1,12 +1,12 @@
   \name{nicotiana}
      \docType{data}
-     \alias{nicotitana}
+     \alias{nicotiana}
      \title{nicotiana data}
      \description{
-       The phylogeny, strcutre ofgene flow and comprative data for nicotiana.
+       The phylogeny, gene flow, and comparative data for nicotiana.
      }
      \usage{nicotiana}
-     \format{This gives the phylogeny ("phy" object), structure of gene flow ("flow") and comparative data for extant species ("data")}
+     \format{a list with the phylogeny (phy), gene flow (flow), and comparative data (data) for Nicotiana species.}
      \source{Chase et al. (2003), Clarkson et al. (2005), Komori et al. (2000)}
      \references{
      Chase M.W., Knapp S., Cox A.V., Clarkson J.J., Butsko Y., Joseph J., Savolainen V., and  Parokonny A.S. 2003. Molecular systematics, GISH and the origin of hybrid taxa in 
