@@ -6,7 +6,7 @@
        This gives the phylogeny, structure of gene flow and comparative data for extant species from Kobmuller et al. 2007.
      	}
      \usage{cichlid}
-     \format{This gives the phylogeny, structure of gene flow and comparative data for extant species}
+     \format{This gives the phylogeny ("phy" object), structure of gene flow ("flow") and comparative data for extant species ("data")}
      \source{Kobmuller et al. 2007}
      \references{
        Kobmuller, S., N. Duftner, K. M. Sefc, M. Aibara,M. Stipacek, M. Blanc, B. Egger, and 

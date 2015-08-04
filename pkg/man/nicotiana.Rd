@@ -6,7 +6,7 @@
        The phylogeny, strcutre ofgene flow and comprative data for nicotiana.
      }
      \usage{nicotiana}
-     \format{An object in eNewick format and the tip data for the species. Note it includes extinct taxa}
+     \format{This gives the phylogeny ("phy" object), structure of gene flow ("flow") and comparative data for extant species ("data")}
      \source{Chase et al. (2003), Clarkson et al. (2005), Komori et al. (2000)}
      \references{
      Chase M.W., Knapp S., Cox A.V., Clarkson J.J., Butsko Y., Joseph J., Savolainen V., and  Parokonny A.S. 2003. Molecular systematics, GISH and the origin of hybrid taxa in 
