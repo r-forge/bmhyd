@@ -1,5 +1,5 @@
 \name{ContourFromAdaptiveSampling}
-\alias{BMhyd}
+\alias{ContourFromAdaptiveSampling}
 \title{
 	Contour maps 
 	}

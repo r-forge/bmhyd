@@ -1,5 +1,5 @@
 \name{LumpIntoClade}
-\alias{BMhyd}
+\alias{LumpIntoClade}
 \title{
 Lump into clade
 }
@@ -9,6 +9,7 @@ This function Lump the hybrid species into a clades
 
 \usage{
 LumpIntoClades(phy,flow)
+}
 \arguments{
   \item{phy}{a phylogeny of phylo class}
   \item{flow}{structure of gene flow}

@@ -1,7 +1,6 @@
   \name{cichlid}
      \docType{data}
      \alias{cichlid}
-     \alias{data}
      \title{Cichlid data from Kobmuller et al. 2007}
      \description{
        This gives the phylogeny, structure of gene flow and comparative data for extant species from Kobmuller et al. 2007.

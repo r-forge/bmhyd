@@ -1,5 +1,5 @@
 \name{GetVModified}
-\alias{BMhyd}
+\alias{GetVModified}
 \title{
 	 Variance covariance matrix for the network model
 	}

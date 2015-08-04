@@ -1,2 +1,6 @@
 exportPattern("^[^\\.]")
-import(corpcor,numDeriv, ape, geiger)
+import(corpcor,numDeriv, geiger, mvtnorm)
+importFrom(ape, vcv.phylo, Ntip, branching.times, bind.tree, drop.tip, extract.clade)
+importFrom(TreeSim, sim.bd.taxa.age)
+importFrom(phytools, findMRCA, getDescendants, nodeheight, nodeHeights)
+importFrom(phylobase, edges, descendants, ancestors)

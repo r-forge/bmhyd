@@ -1,5 +1,5 @@
 \name{DetPass}
-\alias{BMhyd}
+\alias{DetPass}
 \title{
 	determinant of the matrix 
 	}

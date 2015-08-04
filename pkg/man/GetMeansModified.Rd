@@ -1,5 +1,5 @@
 \name{GetMeanModified}
-\alias{BMhyd}
+\alias{GetMeanModified}
 \title{
  	The species means for the network model
 	}

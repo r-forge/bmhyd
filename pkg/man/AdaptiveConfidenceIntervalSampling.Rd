@@ -1,5 +1,5 @@
 \name{AdaptiveConfidenceIntervalSampling}
-\alias{BMhyd}
+\alias{AdaptiveConfidenceIntervalSampling}
 \title{
 Confidence interval under adaptive cluster sampling technique
 }

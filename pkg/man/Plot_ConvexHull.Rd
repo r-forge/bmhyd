@@ -1,5 +1,5 @@
 \name{Plot_ConvexHull}
-\alias{BMhyd}
+\alias{Plot_ConvexHull}
 \title{
 	Convex hull
 	}
@@ -12,8 +12,8 @@
 	Plot_ConvexHull(xcoord, ycoord, lcolor)
 	}
 \arguments{
-  		\item{xcord}{coordinate for the horizontal axis.}
-  		\item{ycord}{coordinate for the vertical axis.}
+  		\item{xcoord}{coordinate for the horizontal axis.}
+  		\item{ycoord}{coordinate for the vertical axis.}
   		\item{lcolor}{color of the convect hull.}
   }
 

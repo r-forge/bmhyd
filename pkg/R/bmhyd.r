@@ -76,7 +76,7 @@ BMhyd <- function(data, phy, flow, opt.method="Nelder-Mead", models=c(1,2,3,4), 
 		print("Getting starting values from Geiger")	
 	}
 
-	starting.from.geiger<-fitContinuous(phy.geiger.friendly, data, model="BM", SE=data*NA)$opt
+	starting.from.geiger<-fitContinuous(phy.geiger.friendly, data, model="BM", SE=data*NA, ncores=1)$opt
 	starting.values <- c(starting.from.geiger$sigsq, starting.from.geiger$z0, 1,  0, starting.from.geiger$SE) #sigma.sq, mu, beta, vh, SE
 	if(verbose) {
 		print("Done getting starting values")
@@ -490,8 +490,6 @@ GetAncestor <- function(phy, node) {
 
 #allow.ghost allows ghost lineage: something that persists for awhile, hybridizes, goes extinct. Otherwise, hybridization events must between coeval edges with extant descendants
 SimulateNetwork <- function(ntax.nonhybrid=100, ntax.hybrid=10, flow.proportion=0.5, origin.type=c("clade", "individual"), birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=FALSE) {
-	library(TreeSim)
-	library(phytools)
 	done = FALSE
 	used.recipients <- c()
 	available.recipient.ids <- sequence(ntax.nonhybrid + ntax.hybrid)
@@ -569,7 +567,6 @@ SimulateNetwork <- function(ntax.nonhybrid=100, ntax.hybrid=10, flow.proportion=
 }
 
 PlotNetwork <- function(phy, flow, col.non="black", col.hybrid="red", col.donor="blue", name.padding=1.5, cex=1, xlab="", bty="n", head.length=0.2, edge.width=2, col.tree="darkgray", col.arrow="red", arrow.width=1, ...) {
-	library(phylobase)
 	phy<-reorder(phy, "pruningwise")
 	phy4 <- as(phy, "phylo4")
 	xxyy <- phyloXXYY(phy4)
@@ -587,7 +584,7 @@ PlotNetwork <- function(phy, flow, col.non="black", col.hybrid="red", col.donor=
 		}
 
 	}
-	text(x=rep(max(xxyy$xx), Ntip(phy)), y=xxyy$yy[which(phylobase:::edges(phy4)[xxyy$eorder,2] %in% sequence(Ntip(phy)))], names(getNode(phy4, xxyy$torder)), col=label.colors, pos=4, cex=cex)
+	text(x=rep(max(xxyy$xx), Ntip(phy)), y=xxyy$yy[which(edges(phy4)[xxyy$eorder,2] %in% sequence(Ntip(phy)))], names(getNode(phy4, xxyy$torder)), col=label.colors, pos=4, cex=cex)
 	for (i in sequence(dim(flow)[1])) {
 		recipient.node <- getNode(phy4, flow$recipient[i])
 		recipient.path <- c(recipient.node, ancestors(phy4, recipient.node))
@@ -597,13 +594,13 @@ PlotNetwork <- function(phy, flow, col.non="black", col.hybrid="red", col.donor=
 		if(length(recipient.path)>1 && length(which(recipient.path.heights==flow$time.from.root.recipient[i]))>0) { #the latter condition means we're moving to an existing node
 				recipient <- valid.recipients[length(valid.recipients)-1]
 		}
-		y1 <- xxyy$yy[which(phylobase:::edges(phy4)[xxyy$eorder,2] == recipient)]
+		y1 <- xxyy$yy[which(edges(phy4)[xxyy$eorder,2] == recipient)]
 		donor.node <- getNode(phy4, flow$donor[i])
 		donor.path <- c(donor.node, ancestors(phy4, donor.node))
 		donor.path.heights <- nodeDepth(phy4, donor.path)
 		valid.donors <- donor.path[which(donor.path.heights > flow$time.from.root.donor[i])]
 		donor <- valid.donors[length(valid.donors)] #do it from the earliest qualifying tipward node
-		y0 <- xxyy$yy[which(phylobase:::edges(phy4)[xxyy$eorder,2] == donor)]
+		y0 <- xxyy$yy[which(edges(phy4)[xxyy$eorder,2] == donor)]
 		arrows(x0=flow$time.from.root.donor[i]/max(branching.times(phy)), x1=flow$time.from.root.recipient[i]/max(branching.times(phy)), y1=y1, y0=y0, col=col.arrow, lwd=arrow.width, length=head.length) #rescale since it goes from zero to 1 in height
 		#grid.arrows(x=c(flow$time.from.root[i],flow$time.from.root[i]), y=c(y0, y1))
 	}
@@ -697,10 +694,10 @@ SimulateTipData <- function(phy, flow, params, suffix="_DUPLICATE") {
 
 #The following short function comes from Ken Takagi at  https://chitchatr.wordpress.com/2011/12/30/convex-hull-around-scatter-plot-in-r/ 
 Plot_ConvexHull<-function(xcoord, ycoord, lcolor){
-  hpts <- chull(x = xcoord, y = ycoord)
-  hpts <- c(hpts, hpts[1])
-  lines(xcoord[hpts], ycoord[hpts], col = lcolor)
-}  
+	hpts <- chull(x = xcoord, y = ycoord)
+	hpts <- c(hpts, hpts[1])
+	lines(xcoord[hpts], ycoord[hpts], col = lcolor)
+}
 
 ContourFromAdaptiveSampling<-function(sims, params.of.interest=NULL) {
 	#sims is a data.frame with the sim results

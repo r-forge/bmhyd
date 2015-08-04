@@ -1,5 +1,5 @@
 \name{AdjustForDet}
-\alias{BMhyd}
+\alias{AdjustForDet}
 \title{
  Adjust the phylogeny 
  }

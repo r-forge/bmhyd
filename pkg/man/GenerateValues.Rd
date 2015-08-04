@@ -1,5 +1,5 @@
 \name{GenerateValues}
-\alias{BMhyd}
+\alias{GenerateValues}
 \title{
 	Generate parameter values 
 	}

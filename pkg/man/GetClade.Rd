@@ -1,5 +1,5 @@
 \name{GetClade}
-\alias{BMhyd}
+\alias{GetClade}
 \title{
 	Get clade from the tree
 	}

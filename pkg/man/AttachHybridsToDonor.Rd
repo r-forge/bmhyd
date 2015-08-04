@@ -1,5 +1,5 @@
 \name{AttachHybridsToDonor}
-\alias{BMhyd}
+\alias{AttachHybridsToDonor}
 \title{
 	Attach hybrids to the donor species
 	}

@@ -1,5 +1,5 @@
 \name{CalculateLikelihood}
-\alias{BMhyd}
+\alias{CalculateLikelihood}
 \title{
 	Calculate the likelihood value for the model
 	}

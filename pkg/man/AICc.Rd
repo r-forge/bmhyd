@@ -1,5 +1,5 @@
 \name{AICc}
-\alias{BMhyd}
+\alias{AICc}
 \title{
 	AICc
 	}
@@ -9,7 +9,7 @@
 	}
 
 \usage{
-	BMhyd(n, k,LogLik)
+	AICc(n, k,LogLik)
 	}
 
 \arguments{

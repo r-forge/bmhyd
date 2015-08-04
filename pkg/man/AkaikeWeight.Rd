@@ -1,5 +1,5 @@
 \name{AkaikeWeight}
-\alias{BMhyd}
+\alias{AkaikeWeight}
 \title{
 	Akaike weight 
 	}

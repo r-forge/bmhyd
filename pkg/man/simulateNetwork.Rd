@@ -1,5 +1,5 @@
 \name{SimulateNetwork}
-\alias{BMhyd}
+\alias{SimulateNetwork}
 \title{
 	Simulate phylogenetic network
 	}

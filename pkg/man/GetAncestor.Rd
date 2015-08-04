@@ -1,5 +1,5 @@
 \name{GetAncestor}
-\alias{BMhyd}
+\alias{GetAncestor}
 \title{
 	Identify the ancestor 
 	}

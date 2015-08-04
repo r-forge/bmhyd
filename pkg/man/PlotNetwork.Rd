@@ -1,5 +1,5 @@
 \name{PlotNetwork}
-\alias{BMhyd}
+\alias{PlotNetwork}
 \title{
 	Phylogenetic Network Plot
 	}
