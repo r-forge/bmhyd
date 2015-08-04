@@ -9,7 +9,8 @@
 	}
 
 \usage{
-	GenerateValues(par, lower, upper, max.tries=100, expand.prob=0, examined.max, examined.min) 
+	GenerateValues(par, lower, upper, max.tries=100, expand.prob=0, examined.max, 
+	examined.min) 
 	}
 
 \arguments{
@@ -55,7 +56,8 @@
 	#the examined maximum value
 	examined.max<-c(1.90,1.1,10.2,100,100)
 	#simulate points
-	sim.points<-GenerateValues(par, lower, upper, max.tries=100, expand.prob=0, examined.max, examined.min)
+	sim.points<-GenerateValues(par, lower, upper, max.tries=100, expand.prob=0, 
+	examined.max, examined.min)
 	names(sim.points)<-c("mu","sigma.sq","bt","vH","SE")
 	#show result
 	sim.points

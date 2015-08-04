@@ -9,7 +9,8 @@
 	}
 
 \usage{
-	CalculateLikelihood(x, data, phy, flow, actual.params, precision=2, proportion.mix.with.diag=0, allow.extrapolation=FALSE) 
+	CalculateLikelihood(x, data, phy, flow, actual.params, precision=2, 
+	proportion.mix.with.diag=0, allow.extrapolation=FALSE) 
 	}
 	
 \arguments{
@@ -45,11 +46,14 @@
 	#set the number of hybrid
 	ntax.hybrid<-1
 	#simulate a network
-	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid, flow.proportion=0.5, origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=FALSE)
+	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid, 
+	flow.proportion=0.5, origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, 
+	tree.height = 1, allow.ghost=FALSE)
 sigma.sq <- 0.01;mu <- 1;SE <- 0
 	#simulatedata
 	data<-rnorm(ntax.nonhybrid+ntax.hybrid)
 	names(data)<-paste("t",(1:(ntax.nonhybrid+ntax.hybrid)),sep="")
 	#calculate the likelihood value
-	CalculateLikelihood(c(sigma.sq,mu,SE), data, network$phy, network$flow, "vh", precision=2, proportion.mix.with.diag=0, allow.extrapolation=TRUE) 
+	CalculateLikelihood(c(sigma.sq,mu,SE), data, network$phy, network$flow, "vh", 
+	precision=2, proportion.mix.with.diag=0, allow.extrapolation=TRUE) 
 	}

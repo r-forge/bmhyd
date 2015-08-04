@@ -49,7 +49,9 @@
 	#set the number of hybrid species
 	ntax.hybrid<-1
 	#simulate a network
-	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid, flow.proportion=0.5, 		origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=FALSE)
+	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid, 
+	flow.proportion=0.5, origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, 
+	tree.height = 1, allow.ghost=FALSE)
 	#assign the parameter values
 	sigma.sq <- 0.01;mu <- 1;SE <- 0
 	#get the variance covariance matrix

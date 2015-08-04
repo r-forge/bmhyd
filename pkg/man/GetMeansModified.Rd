@@ -1,5 +1,5 @@
-\name{GetMeanModified}
-\alias{GetMeanModified}
+\name{GetMeansModified}
+\alias{GetMeansModified}
 \title{
  	The species means for the network model
 	}
@@ -46,7 +46,9 @@
 	#number of hybridspecies
 	ntax.hybrid<-2
 	#simulate network 
-	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid, flow.proportion=0.5, origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=FALSE)
+	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid, 
+	flow.proportion=0.5, origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, 
+	tree.height = 1, allow.ghost=FALSE)
     #set the parameter values
     sigma.sq <- 0.01;mu <- 1;SE <- 0;bt<-12;vh<-0
     par<-c(sigma.sq,mu,SE,bt,vh)

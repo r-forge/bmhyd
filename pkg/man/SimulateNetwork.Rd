@@ -9,7 +9,9 @@
 	}
 
 \usage{
-	SimulateNetwork(ntax.nonhybrid=100, ntax.hybrid=10, flow.proportion=0.5, origin.type=c("clade", "individual"), birth = 1, death = 	0.5, sample.f = 0.5, tree.height = 1, allow.ghost=FALSE)
+	SimulateNetwork(ntax.nonhybrid=100, ntax.hybrid=10, flow.proportion=0.5, 
+	origin.type=c("clade", "individual"), birth = 1, death = 0.5, sample.f = 0.5, 
+	tree.height = 1, allow.ghost=FALSE)
 	}
 
 \arguments{
@@ -17,8 +19,8 @@
 	number of non hybrid taxa.
 	}
 	
-  \item{network}{
-	number of hybrid.
+  \item{ntax.hybrid}{
+	number of hybrid taxa.
 	}
 	
   \item{flow.proportion}{
@@ -81,7 +83,9 @@
 	#set pu the hybridization type to original
 	origins<- "individual"
 	#start to simulate the network
-	network<-SimulateNetwork(ntax.nonhybrid=non.hybrid, ntax.hybrid=hybrid, flow.proportion=flow, origin.type="individual", birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=FALSE)
+	network<-SimulateNetwork(ntax.nonhybrid=non.hybrid, ntax.hybrid=hybrid, 
+	flow.proportion=flow, origin.type="individual", birth = 1, death = 0.5, 
+	sample.f = 0.5, tree.height = 1, allow.ghost=FALSE)
 	#print out the result
 	(network)
 	}

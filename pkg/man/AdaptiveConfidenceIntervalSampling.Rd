@@ -8,7 +8,8 @@ This function uses adaptive cluster sampling technique to generate confidence in
 }
 
 \usage{
-AdaptiveConfidenceIntervalSampling(par, fn, lower=-Inf, upper=Inf, desired.delta = 2, n.points=5000, verbose=TRUE, ...)
+AdaptiveConfidenceIntervalSampling(par, fn, lower=-Inf, upper=Inf, desired.delta = 2, 
+n.points=5000, verbose=TRUE, ...)
 }
 
 \arguments{
@@ -18,6 +19,7 @@ AdaptiveConfidenceIntervalSampling(par, fn, lower=-Inf, upper=Inf, desired.delta
   \item{upper}{the upper bound for the values allowed for sampling.}
   \item{desired.delta}{a numeric value with a default value of 2 for the criterions that the desired log-likelihood shall no more than 2 unit away from the maximum.}
   \item{n.points}{number of required points for calculating likeilihood value.}
+  \item{verbose}{whether to print detailed information during the run.}
   \item{...}{further arguments passed(see details).}
 }
 \details{
@@ -45,7 +47,9 @@ This function starts with a given parameters values, then the points are generat
 	#assign the number of hybrid
 	ntax.hybrid<-1
 	#simulate the network
-	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid, flow.proportion=0.5, origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=FALSE)
+	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid, 
+	flow.proportion=0.5, origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, 
+	tree.height = 1, allow.ghost=FALSE)
 	
 	#generate the tip data
 	tips<-rnorm(ntax.nonhybrid+ntax.hybrid)
@@ -59,11 +63,16 @@ This function starts with a given parameters values, then the points are generat
 	par<-c(0.01,1,1,0,0)
 
 	#Simulate 100 samples  
-	interval.results <- AdaptiveConfidenceIntervalSampling(par, fn=CalculateLikelihood, lower=c(0, -Inf, 0, 0, 0)[which(free.parameters)], n.points=100,data=tips, phy=network$phy, flow=network$flow, actual.params=free.parameters[which(free.parameters)], allow.extrapolation=TRUE)
+	interval.results <- AdaptiveConfidenceIntervalSampling(par, fn=CalculateLikelihood, 
+	lower=c(0, -Inf, 0, 0, 0)[which(free.parameters)], n.points=100,data=tips, 
+	phy=network$phy, flow=network$flow, actual.params =
+	free.parameters[which(free.parameters)], allow.extrapolation=TRUE)
     
     #show the results
-	interval.results.in <- interval.results[which(interval.results[,1]-min(interval.results[,1])<=2),]
-	interval.results.out <- interval.results[which(interval.results[,1]-min(interval.results[,1])>2),]	
+	interval.results.in <- interval.results[which(interval.results[,1] - 
+	min(interval.results[,1])<=2),]
+	interval.results.out <- interval.results[which(interval.results[,1] - 
+	min(interval.results[,1])>2),]	
 	interval.results.in
 	interval.results.out	
 	}

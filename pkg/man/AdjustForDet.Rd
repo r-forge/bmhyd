@@ -16,7 +16,7 @@
 	 	an object of class 'phylo'
  		} 
  		
- 	\item{max.attepmts}{
+ 	\item{max.attempts}{
  		the maximum numer of attempts to adjust the phylogeny. The default is 100.
  		}
 	}

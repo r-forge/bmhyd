@@ -7,26 +7,26 @@ AkaikeWeight<-function(Delta.AICc.Array){
   return(exp(-Delta.AICc.Array/2) /sum(exp(-Delta.AICc.Array/2) ))
 }
 
-se.function<-function(cov.matrix,var.name){
-  name.Index<-which(rownames(cov.matrix)==var.name)
-  if( length(name.Index)==1){
-    return( cov.matrix[name.Index,name.Index])    
-  }else{return(0)}
-}
-
-var.model.Index.function<-
-  function(cov.matrix,var.name){
-    name.Index<-which(rownames(cov.matrix)==var.name)
-    if( length(name.Index)==1){
-      return( cov.matrix[name.Index,name.Index])    
-    }else{return(0)}
-  }
-
-weight.para.value<-
-  function(para.vect,weight){
-    return(sum(para.vect*weight))
-  }
-
+# se.function<-function(cov.matrix,var.name){
+#   name.Index<-which(rownames(cov.matrix)==var.name)
+#   if( length(name.Index)==1){
+#     return( cov.matrix[name.Index,name.Index])    
+#   }else{return(0)}
+# }
+# 
+# var.model.Index.function<-
+#   function(cov.matrix,var.name){
+#     name.Index<-which(rownames(cov.matrix)==var.name)
+#     if( length(name.Index)==1){
+#       return( cov.matrix[name.Index,name.Index])    
+#     }else{return(0)}
+#   }
+# 
+# weight.para.value<-
+#   function(para.vect,weight){
+#     return(sum(para.vect*weight))
+#   }
+# 
 
 ####################################################################
 ###################### MAIN PROGRAM ################################

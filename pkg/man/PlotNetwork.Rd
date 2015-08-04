@@ -9,7 +9,9 @@
 	}
 
 \usage{
-	PlotNetwork(phy, flow, col.non="black", col.hybrid="red", col.donor="blue", name.padding=1.5, cex=1, xlab="", bty="n", head.length=0.2, edge.width=2, col.tree="darkgray", col.arrow="red", arrow.width=1, ...)
+	PlotNetwork(phy, flow, col.non="black", col.hybrid="red", col.donor="blue", 
+	name.padding=1.5, cex=1, xlab="", bty="n", head.length=0.2, edge.width=2, 
+	col.tree="darkgray", col.arrow="red", arrow.width=1, ...)
  }
  
 \arguments{
@@ -51,7 +53,9 @@
 	#set the number of hybrid species
 	ntax.hybrid<-3
 	#simulate the network with desired species
-	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid, flow.proportion=0.5, origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, tree.height = 1, allow.ghost=FALSE)
+	network<-SimulateNetwork(ntax.nonhybrid=ntax.nonhybrid, ntax.hybrid=ntax.hybrid,
+	flow.proportion=0.5, origin.type='clade', birth = 1, death = 0.5, sample.f = 0.5, 
+	tree.height = 1, allow.ghost=FALSE)
 	#plot the network
 	PlotNetwork(network$phy,network$flow)
 	}
