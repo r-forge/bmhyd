@@ -22,7 +22,7 @@
  \item{flow}{
  	a struture of gene flow.
  	}
- \item {actual.params}{
+ \item{actual.params}{
  	The parameters that are related to the hybridzation including the hybrid vigor \eqn{\beta} and variation at the burst of hybridization \eqn{v_H}. 	
  	}
 }
