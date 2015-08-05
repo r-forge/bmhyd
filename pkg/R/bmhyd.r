@@ -588,7 +588,7 @@ PlotNetwork <- function(phy, flow, col.non="black", col.hybrid="red", col.donor=
 	for (i in sequence(dim(flow)[1])) {
 		recipient.node <- getNode(phy4, flow$recipient[i])
 		recipient.path <- c(recipient.node, ancestors(phy4, recipient.node))
-		recipient.path.heights <- nodeDepth(phy4, recipient.path)
+		recipient.path.heights <- nodeHeight(phy4, recipient.path, from="root")
 		valid.recipients <- recipient.path[which(recipient.path.heights > flow$time.from.root.recipient[i])]
 		recipient <- valid.recipients[length(valid.recipients)] #do it from the earliest qualifying tipward node
 		if(length(recipient.path)>1 && length(which(recipient.path.heights==flow$time.from.root.recipient[i]))>0) { #the latter condition means we're moving to an existing node
@@ -597,7 +597,7 @@ PlotNetwork <- function(phy, flow, col.non="black", col.hybrid="red", col.donor=
 		y1 <- xxyy$yy[which(edges(phy4)[xxyy$eorder,2] == recipient)]
 		donor.node <- getNode(phy4, flow$donor[i])
 		donor.path <- c(donor.node, ancestors(phy4, donor.node))
-		donor.path.heights <- nodeDepth(phy4, donor.path)
+		donor.path.heights <- nodeHeight(phy4, donor.path, from="root")
 		valid.donors <- donor.path[which(donor.path.heights > flow$time.from.root.donor[i])]
 		donor <- valid.donors[length(valid.donors)] #do it from the earliest qualifying tipward node
 		y0 <- xxyy$yy[which(edges(phy4)[xxyy$eorder,2] == donor)]
